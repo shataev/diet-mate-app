@@ -1,5 +1,6 @@
 export interface Goals {
   calories: number
+  protein_g: number
   vegetables_g: number
   avocado_g: number
   calcium_mg: number
@@ -44,6 +45,7 @@ export interface FatsecretFood {
 
 export interface DailyNutrition {
   calories: number
+  protein_g: number
   vegetables_g: number
   avocado_g: number
   calcium_mg: number

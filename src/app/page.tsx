@@ -112,7 +112,7 @@ export default function Dashboard() {
   }
 
   const n = nutrition ?? {
-    calories: 0, vegetables_g: 0, avocado_g: 0,
+    calories: 0, protein_g: 0, vegetables_g: 0, avocado_g: 0,
     calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0,
   }
 
@@ -205,6 +205,7 @@ export default function Dashboard() {
           {t.weekly.daily}
         </div>
         <ProgressBar label={t.params.calories} current={n.calories} goal={goals.calories} unit={t.units.kcal} />
+        <ProgressBar label={t.params.protein} current={n.protein_g} goal={goals.protein_g} unit={t.units.g} />
         <ProgressBar label={t.params.vegetables} current={n.vegetables_g} goal={goals.vegetables_g} unit={t.units.g} />
         <ProgressBar label={t.params.avocado} current={n.avocado_g} goal={goals.avocado_g} unit={t.units.g} />
         <ProgressBar label={t.params.calcium} current={n.calcium_mg} goal={goals.calcium_mg} unit={t.units.mg} />

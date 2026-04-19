@@ -11,19 +11,20 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
   const entries = await getFoodDiary(date)
 
   if (entries.length === 0) {
-    return { calories: 0, vegetables_g: 0, avocado_g: 0, calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0 }
+    return { calories: 0, protein_g: 0, vegetables_g: 0, avocado_g: 0, calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0 }
   }
 
   const foodNames = [...new Set(entries.map((e) => e.food_entry_name))]
   const categories = await categorizeBatch(foodNames)
 
-  const result: DailyNutrition = { calories: 0, vegetables_g: 0, avocado_g: 0, calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0 }
+  const result: DailyNutrition = { calories: 0, protein_g: 0, vegetables_g: 0, avocado_g: 0, calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0 }
 
   await Promise.all(entries.map(async (entry) => {
     const grams = getEntryGrams(entry)
     const category = categories.get(entry.food_entry_name) ?? 'other'
 
     result.calories += Number(entry.calories) || 0
+    result.protein_g += Number(entry.protein) || 0
     result.calcium_mg += (Number(entry.calcium) || 0) * (grams / 100)
 
     if (category === 'vegetables') {
@@ -54,6 +55,7 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
   result.seafood_portions = Math.round(result.seafood_portions * 10) / 10
   result.omega3_g = Math.round(result.omega3_g * 100) / 100
   result.calcium_mg = Math.round(result.calcium_mg)
+  result.protein_g = Math.round(result.protein_g)
 
   return result
 }

@@ -58,7 +58,9 @@ function initSchema(db: Database.Database) {
 
   try {
     db.exec(`ALTER TABLE goals ADD COLUMN steps_goal INTEGER NOT NULL DEFAULT 10000`)
-  } catch {
-    // column already exists
-  }
+  } catch {}
+
+  try {
+    db.exec(`ALTER TABLE goals ADD COLUMN protein_g INTEGER NOT NULL DEFAULT 120`)
+  } catch {}
 }

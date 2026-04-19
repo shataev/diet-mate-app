@@ -6,6 +6,7 @@ import { useLang } from '@/contexts/LanguageContext'
 
 const DEFAULTS: Goals = {
   calories: 2000,
+  protein_g: 120,
   vegetables_g: 800,
   avocado_g: 150,
   calcium_mg: 1000,
@@ -23,6 +24,7 @@ export default function SettingsPage() {
 
   const FIELDS: { key: keyof Goals; label: string; unit: string; step: number }[] = [
     { key: 'calories', label: t.params.calories, unit: t.units.kcal, step: 50 },
+    { key: 'protein_g', label: t.params.protein, unit: t.units.g, step: 5 },
     { key: 'vegetables_g', label: t.params.vegetables, unit: t.units.g, step: 50 },
     { key: 'avocado_g', label: t.params.avocado, unit: t.units.g, step: 10 },
     { key: 'calcium_mg', label: t.params.calcium, unit: t.units.mg, step: 50 },
@@ -38,6 +40,7 @@ export default function SettingsPage() {
       .then((data) => {
         setGoals({
           calories: data.calories,
+          protein_g: data.protein_g ?? 120,
           vegetables_g: data.vegetables_g,
           avocado_g: data.avocado_g,
           calcium_mg: data.calcium_mg,

@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
 function computeHits(nutrition: DailyNutrition, goals: Goals): Record<string, boolean> {
   return {
     calories: nutrition.calories > 0 && nutrition.calories <= goals.calories,
+    protein: nutrition.protein_g >= goals.protein_g,
     vegetables: nutrition.vegetables_g >= goals.vegetables_g,
     avocado: nutrition.avocado_g >= goals.avocado_g,
     calcium: nutrition.calcium_mg >= goals.calcium_mg,

@@ -16,6 +16,7 @@ export const translations = {
     },
     params: {
       calories: 'Calories',
+      protein: 'Protein',
       vegetables: 'Vegetables & Fruits',
       avocado: 'Avocado',
       calcium: 'Calcium',
@@ -68,6 +69,7 @@ export const translations = {
     },
     params: {
       calories: 'Калории',
+      protein: 'Белок',
       vegetables: 'Растительность',
       avocado: 'Авокадо',
       calcium: 'Кальций',
