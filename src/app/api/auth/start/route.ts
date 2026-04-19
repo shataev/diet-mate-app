@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getRequestToken } from '@/lib/oauth1'
 import { getDb } from '@/lib/db'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const callbackUrl = `${process.env.NEXTAUTH_URL}/api/auth/callback`
+    const origin = new URL(request.url).origin
+    const callbackUrl = `${origin}/api/auth/callback`
     const requestToken = await getRequestToken(
       process.env.FATSECRET_CLIENT_ID!,
       process.env.FATSECRET_CONSUMER_SECRET!,
