@@ -1,0 +1,99 @@
+export const translations = {
+  en: {
+    nav: {
+      today: 'Today',
+      week: 'Week',
+      goals: 'Goals',
+    },
+    dashboard: {
+      loading: 'Loading data from Fatsecret...',
+      refresh: 'Refresh',
+      refreshing: '...',
+      weight: 'Weight, kg',
+      steps: 'Steps',
+      saving: 'Saving...',
+    },
+    params: {
+      calories: 'Calories',
+      vegetables: 'Vegetables & Fruits',
+      avocado: 'Avocado',
+      calcium: 'Calcium',
+      omega3: 'Omega-3',
+      eggs: 'Eggs',
+      seafood: 'Seafood',
+    },
+    units: {
+      kcal: 'kcal',
+      g: 'g',
+      mg: 'mg',
+      pcs: 'pcs',
+      srv: 'srv.',
+    },
+    settings: {
+      title: 'My Goals',
+      save: 'Save',
+      saved: '✓ Saved',
+      loading: 'Loading...',
+    },
+    weekly: {
+      title: 'Weekly Report',
+      weightLatest: 'Weight (latest)',
+      avgSteps: 'Avg steps',
+      weightTrend: 'Weight trend',
+      parameter: 'Parameter',
+      total: 'Total',
+      loading: 'Loading weekly data...',
+      weekDelta: (delta: string) => `${delta} kg this week`,
+    },
+  },
+  ru: {
+    nav: {
+      today: 'Сегодня',
+      week: 'Неделя',
+      goals: 'Цели',
+    },
+    dashboard: {
+      loading: 'Загружаем данные из Fatsecret...',
+      refresh: 'Обновить',
+      refreshing: '...',
+      weight: 'Вес, кг',
+      steps: 'Шаги',
+      saving: 'Сохраняется...',
+    },
+    params: {
+      calories: 'Калории',
+      vegetables: 'Растительность',
+      avocado: 'Авокадо',
+      calcium: 'Кальций',
+      omega3: 'Омега-3',
+      eggs: 'Яйца',
+      seafood: 'Морепродукты',
+    },
+    units: {
+      kcal: 'ккал',
+      g: 'г',
+      mg: 'мг',
+      pcs: 'шт',
+      srv: 'порц.',
+    },
+    settings: {
+      title: 'Мои цели',
+      save: 'Сохранить',
+      saved: '✓ Сохранено',
+      loading: 'Загрузка...',
+    },
+    weekly: {
+      title: 'Отчёт за неделю',
+      weightLatest: 'Вес (последний)',
+      avgSteps: 'Среднее шагов',
+      weightTrend: 'Динамика веса',
+      parameter: 'Параметр',
+      total: 'Итого',
+      loading: 'Загружаем данные за неделю...',
+      weekDelta: (delta: string) => `${delta} кг за неделю`,
+    },
+  },
+}
+
+export type Language = keyof typeof translations
+export type Translations = typeof translations.en

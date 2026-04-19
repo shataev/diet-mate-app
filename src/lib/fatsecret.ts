@@ -7,6 +7,7 @@ export interface FatsecretDiaryEntry {
   food_entry_id: string
   food_id: string
   food_entry_name: string
+  food_entry_description: string
   number_of_units: string
   meal: string
   calories: string

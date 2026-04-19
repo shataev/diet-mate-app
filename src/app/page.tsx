@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Goals, DailyNutrition } from '@/types'
+import { useLang } from '@/contexts/LanguageContext'
 
 interface ProgressBarProps {
   label: string
@@ -26,8 +27,7 @@ function ProgressBar({ label, current, goal, unit, format }: ProgressBarProps) {
           {label}
         </span>
         <span className="text-sm" style={{ color: done ? 'var(--success)' : 'var(--text-muted)' }}>
-          {fmt(current)} / {fmt(goal)} {unit}
-          {done && ' ✓'}
+          {fmt(current)} / {fmt(goal)} {unit}{done && ' ✓'}
         </span>
       </div>
       <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--surface2)' }}>
@@ -44,6 +44,7 @@ function ProgressBar({ label, current, goal, unit, format }: ProgressBarProps) {
 }
 
 export default function Dashboard() {
+  const { t, lang } = useLang()
   const today = new Date().toISOString().slice(0, 10)
 
   const [nutrition, setNutrition] = useState<DailyNutrition | null>(null)
@@ -94,7 +95,7 @@ export default function Dashboard() {
   if (loading || !goals) {
     return (
       <div style={{ color: 'var(--text-muted)' }} className="text-center py-12">
-        Загружаем данные из Fatsecret...
+        {t.dashboard.loading}
       </div>
     )
   }
@@ -104,7 +105,7 @@ export default function Dashboard() {
     calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0,
   }
 
-  const dateLabel = new Date().toLocaleDateString('ru-RU', {
+  const dateLabel = new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', {
     day: 'numeric', month: 'long', weekday: 'long',
   })
 
@@ -124,7 +125,7 @@ export default function Dashboard() {
             color: refreshing ? 'var(--text-muted)' : 'var(--text)',
           }}
         >
-          {refreshing ? '...' : '↻ Обновить'}
+          {refreshing ? t.dashboard.refreshing : `↻ ${t.dashboard.refresh}`}
         </button>
       </div>
 
@@ -134,7 +135,7 @@ export default function Dashboard() {
       >
         <div>
           <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>
-            Вес, кг
+            {t.dashboard.weight}
           </label>
           <input
             type="number"
@@ -153,7 +154,7 @@ export default function Dashboard() {
         </div>
         <div>
           <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>
-            Шаги
+            {t.dashboard.steps}
           </label>
           <input
             type="number"
@@ -171,31 +172,19 @@ export default function Dashboard() {
         </div>
         {saving && (
           <div className="col-span-2 text-xs text-right" style={{ color: 'var(--text-muted)' }}>
-            Сохраняется...
+            {t.dashboard.saving}
           </div>
         )}
       </div>
 
       <div className="flex flex-col gap-3">
-        <ProgressBar label="Калории" current={n.calories} goal={goals.calories} unit="ккал" />
-        <ProgressBar label="Растительность" current={n.vegetables_g} goal={goals.vegetables_g} unit="г" />
-        <ProgressBar label="Авокадо" current={n.avocado_g} goal={goals.avocado_g} unit="г" />
-        <ProgressBar label="Кальций" current={n.calcium_mg} goal={goals.calcium_mg} unit="мг" />
-        <ProgressBar
-          label="Омега-3"
-          current={n.omega3_g}
-          goal={goals.omega3_g}
-          unit="г"
-          format={(v) => v.toFixed(1)}
-        />
-        <ProgressBar label="Яйца" current={n.eggs} goal={goals.eggs} unit="шт" />
-        <ProgressBar
-          label="Морепродукты"
-          current={n.seafood_portions}
-          goal={goals.seafood_portions}
-          unit="порц."
-          format={(v) => v.toFixed(1)}
-        />
+        <ProgressBar label={t.params.calories} current={n.calories} goal={goals.calories} unit={t.units.kcal} />
+        <ProgressBar label={t.params.vegetables} current={n.vegetables_g} goal={goals.vegetables_g} unit={t.units.g} />
+        <ProgressBar label={t.params.avocado} current={n.avocado_g} goal={goals.avocado_g} unit={t.units.g} />
+        <ProgressBar label={t.params.calcium} current={n.calcium_mg} goal={goals.calcium_mg} unit={t.units.mg} />
+        <ProgressBar label={t.params.omega3} current={n.omega3_g} goal={goals.omega3_g} unit={t.units.g} format={(v) => v.toFixed(1)} />
+        <ProgressBar label={t.params.eggs} current={n.eggs} goal={goals.eggs} unit={t.units.pcs} />
+        <ProgressBar label={t.params.seafood} current={n.seafood_portions} goal={goals.seafood_portions} unit={t.units.srv} format={(v) => v.toFixed(1)} />
       </div>
     </div>
   )
