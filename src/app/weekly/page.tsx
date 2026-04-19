@@ -2,22 +2,36 @@
 
 import { useEffect, useState } from 'react'
 import { useLang } from '@/contexts/LanguageContext'
+import { DailyNutrition, Goals } from '@/types'
 
 interface DayResult {
   date: string
   weight_kg: number | null
   steps: number | null
+  nutrition: DailyNutrition
   hits: Record<string, boolean>
 }
 
 interface WeeklyData {
   days: DayResult[]
+  goals: Goals
   avgSteps: number
 }
 
-function shortDate(dateStr: string, lang: string) {
+function shortDay(dateStr: string, lang: string) {
   const d = new Date(dateStr + 'T12:00:00')
-  return d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'short', day: 'numeric' })
+  return d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'short' })
+}
+
+function dayScore(hits: Record<string, boolean>, dailyKeys: string[]) {
+  return dailyKeys.filter((k) => hits[k]).length
+}
+
+function dayColor(score: number, total: number) {
+  const ratio = score / total
+  if (ratio >= 1) return 'var(--success)'
+  if (ratio >= 0.6) return '#f59e0b'
+  return 'var(--danger)'
 }
 
 export default function WeeklyPage() {
@@ -25,17 +39,13 @@ export default function WeeklyPage() {
   const [data, setData] = useState<WeeklyData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const PARAMS = ['calories', 'protein', 'vegetables', 'avocado', 'calcium', 'omega3', 'eggs', 'seafood']
-  const PARAM_LABELS: Record<string, string> = {
-    calories: t.params.calories,
-    protein: t.params.protein,
-    vegetables: t.params.vegetables,
-    avocado: t.params.avocado,
-    calcium: t.params.calcium,
-    omega3: t.params.omega3,
-    eggs: t.params.eggs,
-    seafood: t.params.seafood,
-  }
+  const DAILY_PARAMS: { key: string; label: string; unit: string; getValue: (n: DailyNutrition) => string | number }[] = [
+    { key: 'calories', label: t.params.calories, unit: t.units.kcal, getValue: (n) => n.calories },
+    { key: 'protein', label: t.params.protein, unit: t.units.g, getValue: (n) => n.protein_g },
+    { key: 'vegetables', label: t.params.vegetables, unit: t.units.g, getValue: (n) => Math.round(n.vegetables_g) },
+    { key: 'avocado', label: t.params.avocado, unit: t.units.g, getValue: (n) => Math.round(n.avocado_g) },
+    { key: 'calcium', label: t.params.calcium, unit: t.units.mg, getValue: (n) => n.calcium_mg },
+  ]
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -52,151 +62,112 @@ export default function WeeklyPage() {
     )
   }
 
-  const daysWithWeight = data.days.filter((d) => d.weight_kg !== null)
+  const { days, goals } = data
+  const daysWithWeight = days.filter((d) => d.weight_kg !== null)
+
+  const weeklyOmega3 = days.reduce((s, d) => s + d.nutrition.omega3_g, 0)
+  const weeklyEggs = days.reduce((s, d) => s + d.nutrition.eggs, 0)
+  const weeklySeafood = days.reduce((s, d) => s + d.nutrition.seafood_portions, 0)
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold mb-6" style={{ color: 'var(--text)' }}>
+    <div className="flex flex-col gap-4">
+      <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>
         {t.weekly.title}
       </h1>
 
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div
-          className="p-4 rounded-xl"
-          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-        >
-          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-            {t.weekly.weightLatest}
-          </div>
+      {/* Weight + Steps */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{t.weekly.weightLatest}</div>
           <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-            {daysWithWeight.length > 0
-              ? `${daysWithWeight[daysWithWeight.length - 1].weight_kg} kg`
-              : '—'}
+            {daysWithWeight.length > 0 ? `${daysWithWeight[daysWithWeight.length - 1].weight_kg}` : '—'}
           </div>
           {daysWithWeight.length >= 2 && (() => {
-            const diff =
-              (daysWithWeight[daysWithWeight.length - 1].weight_kg ?? 0) -
-              (daysWithWeight[0].weight_kg ?? 0)
+            const diff = (daysWithWeight[daysWithWeight.length - 1].weight_kg ?? 0) - (daysWithWeight[0].weight_kg ?? 0)
             return (
-              <div
-                className="text-xs mt-1"
-                style={{ color: diff < 0 ? 'var(--success)' : diff > 0 ? 'var(--danger)' : 'var(--text-muted)' }}
-              >
+              <div className="text-xs mt-1" style={{ color: diff < 0 ? 'var(--success)' : diff > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
                 {t.weekly.weekDelta(`${diff > 0 ? '+' : ''}${diff.toFixed(1)}`)}
               </div>
             )
           })()}
         </div>
-        <div
-          className="p-4 rounded-xl"
-          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-        >
-          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-            {t.weekly.avgSteps}
-          </div>
+        <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{t.weekly.avgSteps}</div>
           <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
             {data.avgSteps > 0 ? data.avgSteps.toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US') : '—'}
           </div>
         </div>
       </div>
 
-      {daysWithWeight.length > 1 && (
-        <div
-          className="p-4 rounded-xl mb-6"
-          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-        >
-          <div className="text-sm font-medium mb-3" style={{ color: 'var(--text)' }}>
-            {t.weekly.weightTrend}
-          </div>
-          <div className="flex items-end gap-2 h-20">
-            {data.days.map((day) => {
-              const weights = daysWithWeight.map((d) => d.weight_kg ?? 0)
-              const min = Math.min(...weights)
-              const max = Math.max(...weights)
-              const range = max - min || 1
-              const h = day.weight_kg !== null
-                ? Math.max(4, ((day.weight_kg - min) / range) * 64 + 4)
-                : 0
-              return (
-                <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className="w-full rounded-t"
-                    style={{
-                      height: `${h}px`,
-                      backgroundColor: day.weight_kg !== null ? 'var(--accent)' : 'var(--surface2)',
-                    }}
-                  />
-                  <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
-                    {shortDate(day.date, lang).split(',')[0]}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
+      {/* Daily params table */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+        {/* Header */}
         <div
           className="grid text-xs font-medium px-3 py-2"
-          style={{
-            gridTemplateColumns: '130px repeat(7, 1fr)',
-            backgroundColor: 'var(--surface2)',
-            color: 'var(--text-muted)',
-          }}
+          style={{ gridTemplateColumns: '100px repeat(7, 1fr)', backgroundColor: 'var(--surface2)', color: 'var(--text-muted)' }}
         >
           <div>{t.weekly.parameter}</div>
-          {data.days.map((d) => (
-            <div key={d.date} className="text-center">
-              {shortDate(d.date, lang).split(',')[0]}
-            </div>
-          ))}
-        </div>
-
-        {PARAMS.map((param, i) => (
-          <div
-            key={param}
-            className="grid px-3 py-2 text-xs items-center"
-            style={{
-              gridTemplateColumns: '130px repeat(7, 1fr)',
-              backgroundColor: i % 2 === 0 ? 'var(--surface)' : 'var(--surface2)',
-              borderTop: '1px solid var(--border)',
-            }}
-          >
-            <div style={{ color: 'var(--text)' }}>{PARAM_LABELS[param]}</div>
-            {data.days.map((d) => (
-              <div key={d.date} className="text-center text-base">
-                {d.hits[param]
-                  ? <span style={{ color: 'var(--success)' }}>✓</span>
-                  : <span style={{ color: 'var(--border)' }}>·</span>}
-              </div>
-            ))}
-          </div>
-        ))}
-
-        <div
-          className="grid px-3 py-2 text-xs font-semibold"
-          style={{
-            gridTemplateColumns: '130px repeat(7, 1fr)',
-            backgroundColor: 'var(--surface2)',
-            borderTop: '1px solid var(--border)',
-            color: 'var(--text-muted)',
-          }}
-        >
-          <div>{t.weekly.total}</div>
-          {data.days.map((d) => {
-            const hits = Object.values(d.hits).filter(Boolean).length
+          {days.map((d) => {
+            const score = dayScore(d.hits, DAILY_PARAMS.map((p) => p.key))
+            const total = DAILY_PARAMS.length
             return (
-              <div
-                key={d.date}
-                className="text-center"
-                style={{ color: hits >= 5 ? 'var(--success)' : 'var(--text)' }}
-              >
-                {hits}/{PARAMS.length}
+              <div key={d.date} className="text-center flex flex-col items-center gap-0.5">
+                <span>{shortDay(d.date, lang)}</span>
+                <span className="text-xs font-bold" style={{ color: dayColor(score, total) }}>
+                  {d.nutrition.calories > 0 ? `${score}/${total}` : '—'}
+                </span>
               </div>
             )
           })}
         </div>
+
+        {/* Daily rows */}
+        {DAILY_PARAMS.map(({ key, label, unit, getValue }, i) => (
+          <div
+            key={key}
+            className="grid px-3 py-2 text-xs items-center"
+            style={{
+              gridTemplateColumns: '100px repeat(7, 1fr)',
+              backgroundColor: i % 2 === 0 ? 'var(--surface)' : 'var(--surface2)',
+              borderTop: '1px solid var(--border)',
+            }}
+          >
+            <div style={{ color: 'var(--text)' }}>
+              <div>{label}</div>
+              <div style={{ color: 'var(--text-muted)' }}>{unit}</div>
+            </div>
+            {days.map((d) => {
+              const val = getValue(d.nutrition)
+              const hit = d.hits[key]
+              const hasData = d.nutrition.calories > 0
+              return (
+                <div key={d.date} className="text-center" style={{ color: !hasData ? 'var(--text-muted)' : hit ? 'var(--success)' : 'var(--danger)' }}>
+                  {hasData ? val : '—'}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+
+      {/* Weekly totals */}
+      <div className="rounded-xl p-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{t.weekly.weekly}</div>
+        {[
+          { label: t.params.omega3, value: weeklyOmega3.toFixed(1), goal: goals.omega3_g, unit: t.units.g },
+          { label: t.params.eggs, value: weeklyEggs, goal: goals.eggs, unit: t.units.pcs },
+          { label: t.params.seafood, value: weeklySeafood.toFixed(1), goal: goals.seafood_portions, unit: t.units.srv },
+        ].map(({ label, value, goal, unit }) => {
+          const hit = Number(value) >= goal
+          return (
+            <div key={label} className="flex items-center justify-between">
+              <span className="text-sm" style={{ color: 'var(--text)' }}>{label}</span>
+              <span className="text-sm font-semibold" style={{ color: hit ? 'var(--success)' : 'var(--text)' }}>
+                {value} / {goal} {unit}
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
