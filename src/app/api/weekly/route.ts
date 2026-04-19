@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { getDailyNutrition } from '@/lib/nutrition'
 import { getWeightForDate } from '@/lib/fatsecret'
+import { getStepsForDate } from '@/lib/garmin'
 import { Goals, DailyNutrition } from '@/types'
 
 export async function GET(request: NextRequest) {
@@ -27,25 +28,33 @@ export async function GET(request: NextRequest) {
         | undefined
 
       let weight_kg = log?.weight_kg ?? null
-      const [nutrition, fsWeight] = await Promise.all([
+      let steps = log?.steps ?? null
+
+      const [nutrition, fsWeight, garminSteps] = await Promise.all([
         getDailyNutrition(date),
         weight_kg === null ? getWeightForDate(date).catch(() => null) : Promise.resolve(null),
+        steps === null ? getStepsForDate(date).catch(() => null) : Promise.resolve(null),
       ])
 
-      if (fsWeight !== null) {
-        weight_kg = fsWeight
+      if (fsWeight !== null) weight_kg = fsWeight
+      if (garminSteps !== null) steps = garminSteps
+
+      if (fsWeight !== null || garminSteps !== null) {
         db.prepare(`
           INSERT INTO daily_log (date, weight_kg, steps)
           VALUES (?, ?, ?)
-          ON CONFLICT(date) DO UPDATE SET weight_kg = excluded.weight_kg, updated_at = datetime('now')
-        `).run(dateStr, weight_kg, log?.steps ?? null)
+          ON CONFLICT(date) DO UPDATE SET
+            weight_kg = COALESCE(excluded.weight_kg, weight_kg),
+            steps = COALESCE(excluded.steps, steps),
+            updated_at = datetime('now')
+        `).run(dateStr, weight_kg, steps)
       }
 
       return {
         date: dateStr,
         nutrition,
         weight_kg,
-        steps: log?.steps ?? null,
+        steps,
         hits: computeHits(nutrition, goals),
       }
     })

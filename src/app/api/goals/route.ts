@@ -21,6 +21,7 @@ export async function PUT(request: NextRequest) {
       omega3_g = ?,
       eggs = ?,
       seafood_portions = ?,
+      steps_goal = ?,
       updated_at = datetime('now')
     WHERE id = 1
   `).run(
@@ -30,7 +31,8 @@ export async function PUT(request: NextRequest) {
     body.calcium_mg,
     body.omega3_g,
     body.eggs,
-    body.seafood_portions
+    body.seafood_portions,
+    body.steps_goal
   )
 
   return NextResponse.json({ ok: true })
