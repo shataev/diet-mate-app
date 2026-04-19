@@ -6,11 +6,21 @@ import NavBar from '@/components/NavBar'
 export const metadata: Metadata = {
   title: 'Diet Mate',
   description: 'Nutrition tracking and weight control',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Diet Mate',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body>
         <LanguageProvider>
           <div className="min-h-screen flex flex-col">
