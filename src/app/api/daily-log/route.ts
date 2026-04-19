@@ -49,6 +49,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const apiKey = process.env.DIET_MATE_API_KEY
+  if (apiKey) {
+    const auth = request.headers.get('x-api-key')
+    if (auth !== apiKey) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  }
+
   const body = await request.json()
   const { date, weight_kg, steps } = body
   const db = getDb()
