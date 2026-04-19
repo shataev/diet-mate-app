@@ -1,6 +1,7 @@
 import { getFoodDiary, FatsecretDiaryEntry } from './fatsecret'
 import { categorizeBatch } from './categorizer'
 import { getOmega3Per100g } from './usda'
+import { getDb } from './db'
 import { DailyNutrition } from '@/types'
 
 const SEAFOOD_PORTION_G = 110
@@ -35,9 +36,18 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
       result.seafood_portions += grams / SEAFOOD_PORTION_G
     }
 
-    const omega3Per100g = await getOmega3Per100g(entry.food_entry_name)
-    if (omega3Per100g !== null) {
-      result.omega3_g += omega3Per100g * (grams / 100)
+    if (category === 'omega3') {
+      const db = getDb()
+      const row = db.prepare('SELECT omega3_per_100g FROM food_cache WHERE food_name = ?')
+        .get(entry.food_entry_name.toLowerCase()) as { omega3_per_100g: number | null } | undefined
+      if (row?.omega3_per_100g) {
+        result.omega3_g += row.omega3_per_100g * (grams / 100)
+      }
+    } else {
+      const omega3Per100g = await getOmega3Per100g(entry.food_entry_name)
+      if (omega3Per100g !== null) {
+        result.omega3_g += omega3Per100g * (grams / 100)
+      }
     }
   }))
 

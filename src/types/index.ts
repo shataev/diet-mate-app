@@ -20,6 +20,7 @@ export type FoodCategory =
   | 'avocado'
   | 'eggs'
   | 'seafood'
+  | 'omega3'
   | 'other'
 
 export interface FoodCache {
