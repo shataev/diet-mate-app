@@ -48,10 +48,17 @@ interface WeightPoint {
   weight_kg: number | null
 }
 
+function shiftDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function Dashboard() {
   const { t, lang } = useLang()
   const today = new Date().toISOString().slice(0, 10)
 
+  const [selectedDate, setSelectedDate] = useState(today)
   const [nutrition, setNutrition] = useState<DailyNutrition | null>(null)
   const [goals, setGoals] = useState<Goals | null>(null)
   const [weightHistory, setWeightHistory] = useState<WeightPoint[]>([])
@@ -62,23 +69,25 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     const [goalsRes, logRes, historyRes] = await Promise.all([
       fetch('/api/goals').then((r) => r.json()),
-      fetch(`/api/daily-log?date=${today}`).then((r) => r.json()),
-      fetch('/api/weight-history').then((r) => r.json()),
+      fetch(`/api/daily-log?date=${selectedDate}`).then((r) => r.json()),
+      fetch(`/api/weight-history?date=${selectedDate}`).then((r) => r.json()),
     ])
     setGoals(goalsRes)
-    if (logRes.steps) setSteps(logRes.steps)
+    setSteps(logRes.steps ?? 0)
     setWeightHistory(historyRes)
-  }, [today])
+  }, [selectedDate])
 
   const loadNutrition = useCallback(async () => {
     setRefreshing(true)
-    const data = await fetch(`/api/nutrition?date=${today}`).then((r) => r.json())
+    const data = await fetch(`/api/nutrition?date=${selectedDate}`).then((r) => r.json())
     setNutrition(data)
     setRefreshing(false)
     setLoading(false)
-  }, [today])
+  }, [selectedDate])
 
   useEffect(() => {
+    setNutrition(null)
+    setSteps(0)
     load()
     loadNutrition()
   }, [load, loadNutrition])
@@ -96,16 +105,40 @@ export default function Dashboard() {
     calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0,
   }
 
-  const dateLabel = new Date().toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', {
-    day: 'numeric', month: 'long', weekday: 'long',
-  })
+  const isToday = selectedDate === today
+  const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString(
+    lang === 'ru' ? 'ru-RU' : 'en-US',
+    { day: 'numeric', month: 'long', weekday: 'long' }
+  )
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold capitalize" style={{ color: 'var(--text)' }}>
-          {dateLabel}
-        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSelectedDate((d) => shiftDate(d, -1))}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+            style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          >
+            ‹
+          </button>
+          <h1 className="text-base font-semibold capitalize" style={{ color: 'var(--text)' }}>
+            {dateLabel}
+          </h1>
+          <button
+            onClick={() => setSelectedDate((d) => shiftDate(d, 1))}
+            disabled={isToday}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+            style={{
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: isToday ? 'var(--text-muted)' : 'var(--text)',
+              opacity: isToday ? 0.4 : 1,
+            }}
+          >
+            ›
+          </button>
+        </div>
         <button
           onClick={loadNutrition}
           disabled={refreshing}
@@ -129,7 +162,7 @@ export default function Dashboard() {
             {t.dashboard.weight}
           </span>
           <span className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-            {weightHistory.findLast((d) => d.weight_kg !== null)?.weight_kg?.toFixed(1) ?? '—'}
+            {weightHistory.find((d) => d.date === selectedDate)?.weight_kg?.toFixed(1) ?? '—'}
           </span>
         </div>
 
