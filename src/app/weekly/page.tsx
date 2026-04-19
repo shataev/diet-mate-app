@@ -18,6 +18,95 @@ interface WeeklyData {
   avgSteps: number
 }
 
+function TrendChart({
+  days,
+  getValue,
+  goal,
+  color,
+  type = 'bar',
+  lang,
+}: {
+  days: DayResult[]
+  getValue: (d: DayResult) => number | null
+  goal?: number
+  color: string
+  type?: 'bar' | 'line'
+  lang: string
+}) {
+  const W = 300, H = 80, PAD = 4, BOTTOM = 18
+  const vals = days.map(getValue)
+  const defined = vals.filter((v) => v !== null) as number[]
+  if (defined.length === 0) return <div style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center' }}>—</div>
+
+  const min = type === 'line' ? Math.min(...defined) * 0.98 : 0
+  const max = Math.max(...defined, goal ?? 0) * 1.05 || 1
+  const range = max - min || 1
+
+  const xStep = (W - PAD * 2) / (days.length - 1)
+  const yScale = (v: number) => H - BOTTOM - ((v - min) / range) * (H - BOTTOM - PAD)
+
+  const barW = (W - PAD * 2) / days.length * 0.6
+  const barX = (i: number) => PAD + i * ((W - PAD * 2) / days.length) + ((W - PAD * 2) / days.length) * 0.2
+
+  const dayLabel = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00')
+    return d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'narrow' })
+  }
+
+  const goalY = goal !== undefined ? yScale(goal) : null
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+      {goalY !== null && (
+        <line x1={PAD} y1={goalY} x2={W - PAD} y2={goalY}
+          stroke="var(--border)" strokeWidth="1" strokeDasharray="4 3" />
+      )}
+      {type === 'bar' && days.map((d, i) => {
+        const v = getValue(d)
+        if (v === null) return null
+        const barH = Math.max(2, ((v - min) / range) * (H - BOTTOM - PAD))
+        const hit = goal !== undefined ? v >= goal : true
+        return (
+          <g key={d.date}>
+            <rect x={barX(i)} y={H - BOTTOM - barH} width={barW} height={barH}
+              fill={hit ? color : 'var(--danger)'} rx="2" opacity="0.85" />
+          </g>
+        )
+      })}
+      {type === 'line' && (() => {
+        const points = days.map((d, i) => {
+          const v = getValue(d)
+          return v !== null ? `${PAD + i * xStep},${yScale(v)}` : null
+        })
+        const path = points.reduce<string>((acc, p, i) => {
+          if (!p) return acc
+          const prev = points.slice(0, i).reverse().find(Boolean)
+          return acc + (prev ? `L${p}` : `M${p}`)
+        }, '')
+        return (
+          <>
+            <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            {days.map((d, i) => {
+              const v = getValue(d)
+              if (v === null) return null
+              return <circle key={d.date} cx={PAD + i * xStep} cy={yScale(v)} r="3" fill={color} />
+            })}
+          </>
+        )
+      })()}
+      {days.map((d, i) => {
+        const cx = type === 'bar' ? barX(i) + barW / 2 : PAD + i * xStep
+        return (
+          <text key={d.date} x={cx} y={H - 4} textAnchor="middle"
+            fontSize="9" fill="var(--text-muted)">
+            {dayLabel(d.date)}
+          </text>
+        )
+      })}
+    </svg>
+  )
+}
+
 function shortDay(dateStr: string, lang: string) {
   const d = new Date(dateStr + 'T12:00:00')
   return d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'short' })
@@ -98,6 +187,41 @@ export default function WeeklyPage() {
           </div>
         </div>
       </div>
+
+      {/* Trend charts */}
+      {[
+        {
+          label: t.weekly.weightLatest,
+          unit: 'kg',
+          getValue: (d: DayResult) => d.weight_kg,
+          color: 'var(--accent)',
+          type: 'line' as const,
+        },
+        {
+          label: t.params.calories,
+          unit: t.units.kcal,
+          getValue: (d: DayResult) => d.nutrition.calories || null,
+          goal: goals.calories,
+          color: '#f59e0b',
+          type: 'bar' as const,
+        },
+        {
+          label: t.weekly.avgSteps,
+          unit: '',
+          getValue: (d: DayResult) => d.steps,
+          goal: goals.steps_goal,
+          color: 'var(--success)',
+          type: 'bar' as const,
+        },
+      ].map(({ label, unit, getValue, goal, color, type }) => (
+        <div key={label} className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="text-xs font-medium mb-2 flex items-center justify-between" style={{ color: 'var(--text-muted)' }}>
+            <span>{label}</span>
+            {unit && <span>{unit}</span>}
+          </div>
+          <TrendChart days={days} getValue={getValue} goal={goal} color={color} type={type} lang={lang} />
+        </div>
+      ))}
 
       {/* Daily params table */}
       <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
