@@ -1,0 +1,58 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getDb } from '@/lib/db'
+import { getDailyNutrition } from '@/lib/nutrition'
+import { Goals, DailyNutrition } from '@/types'
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const endDateStr = searchParams.get('date') ?? new Date().toISOString().slice(0, 10)
+  const endDate = new Date(endDateStr + 'T12:00:00')
+
+  const days: string[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(endDate)
+    d.setDate(d.getDate() - i)
+    days.push(d.toISOString().slice(0, 10))
+  }
+
+  const db = getDb()
+  const goals = db.prepare('SELECT * FROM goals WHERE id = 1').get() as Goals
+
+  const results = await Promise.all(
+    days.map(async (dateStr) => {
+      const date = new Date(dateStr + 'T12:00:00')
+      const [nutrition, log] = await Promise.all([
+        getDailyNutrition(date),
+        db.prepare('SELECT weight_kg, steps FROM daily_log WHERE date = ?').get(dateStr) as
+          | { weight_kg: number | null; steps: number | null }
+          | undefined,
+      ])
+      return {
+        date: dateStr,
+        nutrition,
+        weight_kg: log?.weight_kg ?? null,
+        steps: log?.steps ?? null,
+        hits: computeHits(nutrition, goals),
+      }
+    })
+  )
+
+  const avgSteps = Math.round(
+    results.filter((r) => r.steps !== null).reduce((s, r) => s + (r.steps ?? 0), 0) /
+      (results.filter((r) => r.steps !== null).length || 1)
+  )
+
+  return NextResponse.json({ days: results, goals, avgSteps })
+}
+
+function computeHits(nutrition: DailyNutrition, goals: Goals): Record<string, boolean> {
+  return {
+    calories: nutrition.calories > 0 && nutrition.calories <= goals.calories,
+    vegetables: nutrition.vegetables_g >= goals.vegetables_g,
+    avocado: nutrition.avocado_g >= goals.avocado_g,
+    calcium: nutrition.calcium_mg >= goals.calcium_mg,
+    omega3: nutrition.omega3_g >= goals.omega3_g,
+    eggs: nutrition.eggs >= goals.eggs,
+    seafood: nutrition.seafood_portions >= goals.seafood_portions,
+  }
+}
