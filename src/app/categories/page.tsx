@@ -94,14 +94,14 @@ export default function CategoriesPage() {
               className="px-4 py-3 rounded-xl"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-2">
                 <span
-                  className="text-sm flex-1 truncate"
+                  className="text-sm"
                   style={{ color: saving === item.food_name ? 'var(--text-muted)' : 'var(--text)' }}
                 >
                   {item.food_name}
                 </span>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex flex-wrap gap-1">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat}
