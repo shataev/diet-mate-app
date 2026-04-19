@@ -2,7 +2,11 @@ import OpenAI from 'openai'
 import { getDb } from './db'
 import { FoodCategory } from '@/types'
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+let client: OpenAI | null = null
+function getClient(): OpenAI {
+  if (!client) client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  return client
+}
 
 const CATEGORIES: FoodCategory[] = ['vegetables', 'avocado', 'eggs', 'seafood', 'other']
 
@@ -15,7 +19,7 @@ export async function categorizeFood(foodName: string): Promise<FoodCategory> {
 
   if (cached) return cached.category
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       {
@@ -70,7 +74,7 @@ export async function categorizeBatch(
 
   if (uncached.length === 0) return result
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       {
