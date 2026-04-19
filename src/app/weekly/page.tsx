@@ -25,9 +25,10 @@ export default function WeeklyPage() {
   const [data, setData] = useState<WeeklyData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const PARAMS = ['calories', 'vegetables', 'avocado', 'calcium', 'omega3', 'eggs', 'seafood']
+  const PARAMS = ['calories', 'protein', 'vegetables', 'avocado', 'calcium', 'omega3', 'eggs', 'seafood']
   const PARAM_LABELS: Record<string, string> = {
     calories: t.params.calories,
+    protein: t.params.protein,
     vegetables: t.params.vegetables,
     avocado: t.params.avocado,
     calcium: t.params.calcium,
