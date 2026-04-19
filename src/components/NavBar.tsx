@@ -26,6 +26,9 @@ export default function NavBar() {
           <Link href="/settings" className="text-sm" style={{ color: 'var(--text-muted)' }}>
             {t.nav.goals}
           </Link>
+          <Link href="/categories" className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            {t.nav.categories}
+          </Link>
           <div
             className="flex text-xs rounded-lg overflow-hidden"
             style={{ border: '1px solid var(--border)' }}

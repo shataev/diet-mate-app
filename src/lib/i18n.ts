@@ -3,7 +3,8 @@ export const translations = {
     nav: {
       today: 'Today',
       week: 'Week',
-      goals: 'Goals',
+        goals: 'Goals',
+      categories: 'Categories',
     },
     dashboard: {
       loading: 'Loading data from Fatsecret...',
@@ -50,7 +51,8 @@ export const translations = {
     nav: {
       today: 'Сегодня',
       week: 'Неделя',
-      goals: 'Цели',
+        goals: 'Цели',
+      categories: 'Категории',
     },
     dashboard: {
       loading: 'Загружаем данные из Fatsecret...',
