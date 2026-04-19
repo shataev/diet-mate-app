@@ -59,6 +59,22 @@ async function callApi(method: string, extraParams: Record<string, string>): Pro
   return res.json()
 }
 
+export async function getWeightForDate(date: Date): Promise<number | null> {
+  const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24))
+
+  const data = await callApi('weights.get_month.v2', {
+    year: String(date.getFullYear()),
+    month: String(date.getMonth() + 1),
+  }) as { month?: { day?: { date_int: string; weight_kg: string } | { date_int: string; weight_kg: string }[] } }
+
+  const days = data.month?.day
+  if (!days) return null
+
+  const arr = Array.isArray(days) ? days : [days]
+  const entry = arr.find((d) => d.date_int === String(daysSinceEpoch))
+  return entry ? parseFloat(entry.weight_kg) : null
+}
+
 export async function getFoodDiary(date: Date): Promise<FatsecretDiaryEntry[]> {
   const daysSinceEpoch = Math.floor(date.getTime() / (1000 * 60 * 60 * 24))
 
