@@ -26,14 +26,8 @@ export async function getStepsForDate(date: Date): Promise<number | null> {
     const gc = await getClient()
     const steps = await gc.getSteps(date)
     return typeof steps === 'number' && steps > 0 ? steps : null
-  } catch (err: unknown) {
-    // Reset client on auth errors so next call re-authenticates
-    if (err && typeof err === 'object' && 'message' in err) {
-      const msg = String((err as { message: string }).message)
-      if (msg.includes('401') || msg.includes('NOT_AUTHORIZED') || msg.includes('403')) {
-        client = null
-      }
-    }
+  } catch {
+    client = null
     return null
   }
 }
