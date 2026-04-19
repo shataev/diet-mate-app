@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Diet Mate
 
-## Getting Started
+A personal nutrition tracking web app that syncs with Fatsecret and helps maintain healthy eating habits without a coach.
 
-First, run the development server:
+## What it does
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Pulls daily food diary from Fatsecret via OAuth 1.0
+- Categorizes food items using GPT-4o-mini with local caching
+- Tracks 7 nutrition parameters with progress bars
+- Manual daily input for weight and steps
+- Weekly report showing trends and goal hit rate
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tracked parameters
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Parameter | Unit |
+|---|---|
+| Calories | kcal/day |
+| Vegetables, fruits & greens | g/day |
+| Avocado | g/day |
+| Calcium | mg/day |
+| Omega-3 | g/day |
+| Eggs | pcs/day |
+| Seafood | portions/day |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All targets are configurable in the Settings screen.
 
-## Learn More
+## Tech stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Next.js** — frontend + API routes
+- **Fatsecret API** — food diary (OAuth 1.0)
+- **OpenAI GPT-4o-mini** — food categorization
+- **USDA FoodData Central** — Omega-3 data
+- **SQLite** (better-sqlite3) — local storage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Clone the repo and install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Deploy on Vercel
+2. Create `.env.local`:
+   ```
+   FATSECRET_CLIENT_ID=your_client_id
+   FATSECRET_CLIENT_SECRET=your_oauth2_client_secret
+   FATSECRET_CONSUMER_SECRET=your_oauth1_consumer_secret
+   OPENAI_API_KEY=your_openai_key
+   USDA_API_KEY=your_usda_key        # optional, DEMO_KEY used if empty
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=your_random_secret
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Run the dev server:
+   ```bash
+   npm run dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Authorize Fatsecret by opening:
+   ```
+   http://localhost:3000/api/auth/start
+   ```
+
+5. Open the app at [http://localhost:3000](http://localhost:3000)
+
+## Notes
+
+- Fatsecret food diary access requires OAuth 1.0 via `authentication.fatsecret.com`
+- Food categories are cached in SQLite after the first classification — no repeated API calls
+- The database file `diet-mate.db` is created automatically in the project root
