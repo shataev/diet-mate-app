@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { useLang } from '@/contexts/LanguageContext'
 import { Language } from '@/lib/i18n'
@@ -43,8 +44,9 @@ export default function NavBar() {
       className="px-4 py-3"
     >
       <div className="max-w-2xl mx-auto flex items-center justify-between">
-        <Link href="/" className="text-lg font-semibold" style={{ color: 'var(--text)' }}>
-          🥗 Diet Mate
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold" style={{ color: 'var(--text)' }}>
+          <Image src="/icons/vegetable.png" alt="Diet Mate" width={28} height={28} />
+          Diet Mate
         </Link>
 
         {/* Desktop nav */}
