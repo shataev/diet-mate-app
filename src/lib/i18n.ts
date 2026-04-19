@@ -30,6 +30,7 @@ export const translations = {
       mg: 'mg',
       pcs: 'pcs',
       srv: 'srv.',
+      week: '/ week',
     },
     settings: {
       title: 'My Goals',
@@ -46,6 +47,8 @@ export const translations = {
       total: 'Total',
       loading: 'Loading weekly data...',
       weekDelta: (delta: string) => `${delta} kg this week`,
+      daily: 'Daily',
+      weekly: 'Weekly',
     },
   },
   ru: {
@@ -79,6 +82,7 @@ export const translations = {
       mg: 'мг',
       pcs: 'шт',
       srv: 'порц.',
+      week: '/ нед.',
     },
     settings: {
       title: 'Мои цели',
@@ -95,6 +99,8 @@ export const translations = {
       total: 'Итого',
       loading: 'Загружаем данные за неделю...',
       weekDelta: (delta: string) => `${delta} кг за неделю`,
+      daily: 'Ежедневно',
+      weekly: 'За неделю',
     },
   },
 }

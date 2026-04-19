@@ -60,6 +60,7 @@ export default function Dashboard() {
 
   const [selectedDate, setSelectedDate] = useState(today)
   const [nutrition, setNutrition] = useState<DailyNutrition | null>(null)
+  const [weeklyTotals, setWeeklyTotals] = useState<{ omega3_g: number; eggs: number; seafood_portions: number } | null>(null)
   const [goals, setGoals] = useState<Goals | null>(null)
   const [weightHistory, setWeightHistory] = useState<WeightPoint[]>([])
   const [steps, setSteps] = useState(0)
@@ -79,14 +80,24 @@ export default function Dashboard() {
 
   const loadNutrition = useCallback(async () => {
     setRefreshing(true)
-    const data = await fetch(`/api/nutrition?date=${selectedDate}`).then((r) => r.json())
-    setNutrition(data)
+    const [dailyData, weeklyData] = await Promise.all([
+      fetch(`/api/nutrition?date=${selectedDate}`).then((r) => r.json()),
+      fetch(`/api/weekly?date=${selectedDate}`).then((r) => r.json()),
+    ])
+    setNutrition(dailyData)
+    const days: { nutrition: DailyNutrition }[] = weeklyData.days ?? []
+    setWeeklyTotals({
+      omega3_g: days.reduce((s, d) => s + (d.nutrition.omega3_g ?? 0), 0),
+      eggs: days.reduce((s, d) => s + (d.nutrition.eggs ?? 0), 0),
+      seafood_portions: days.reduce((s, d) => s + (d.nutrition.seafood_portions ?? 0), 0),
+    })
     setRefreshing(false)
     setLoading(false)
   }, [selectedDate])
 
   useEffect(() => {
     setNutrition(null)
+    setWeeklyTotals(null)
     setSteps(0)
     load()
     loadNutrition()
@@ -190,13 +201,37 @@ export default function Dashboard() {
       </div>
 
       <div className="flex flex-col gap-3">
+        <div className="text-xs font-semibold uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>
+          {t.weekly.daily}
+        </div>
         <ProgressBar label={t.params.calories} current={n.calories} goal={goals.calories} unit={t.units.kcal} />
         <ProgressBar label={t.params.vegetables} current={n.vegetables_g} goal={goals.vegetables_g} unit={t.units.g} />
         <ProgressBar label={t.params.avocado} current={n.avocado_g} goal={goals.avocado_g} unit={t.units.g} />
         <ProgressBar label={t.params.calcium} current={n.calcium_mg} goal={goals.calcium_mg} unit={t.units.mg} />
-        <ProgressBar label={t.params.omega3} current={n.omega3_g} goal={goals.omega3_g} unit={t.units.g} format={(v) => v.toFixed(1)} />
-        <ProgressBar label={t.params.eggs} current={n.eggs} goal={goals.eggs} unit={t.units.pcs} />
-        <ProgressBar label={t.params.seafood} current={n.seafood_portions} goal={goals.seafood_portions} unit={t.units.srv} format={(v) => v.toFixed(1)} />
+
+        <div className="text-xs font-semibold uppercase tracking-wider mt-2" style={{ color: 'var(--text-muted)' }}>
+          {t.weekly.weekly}
+        </div>
+        <ProgressBar
+          label={t.params.omega3}
+          current={weeklyTotals?.omega3_g ?? 0}
+          goal={goals.omega3_g}
+          unit={t.units.g}
+          format={(v) => v.toFixed(1)}
+        />
+        <ProgressBar
+          label={t.params.eggs}
+          current={weeklyTotals?.eggs ?? 0}
+          goal={goals.eggs}
+          unit={t.units.pcs}
+        />
+        <ProgressBar
+          label={t.params.seafood}
+          current={weeklyTotals?.seafood_portions ?? 0}
+          goal={goals.seafood_portions}
+          unit={t.units.srv}
+          format={(v) => v.toFixed(1)}
+        />
       </div>
     </div>
   )

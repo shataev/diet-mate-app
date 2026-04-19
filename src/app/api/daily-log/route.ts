@@ -14,12 +14,15 @@ export async function GET(request: NextRequest) {
 
   const date = new Date(dateStr + 'T12:00:00')
 
+  const today = new Date().toISOString().slice(0, 10)
+  const isToday = dateStr === today
+
   let weight_kg = log?.weight_kg ?? null
   let steps = log?.steps ?? null
 
   const [fsWeight, garminSteps] = await Promise.allSettled([
     weight_kg === null ? getWeightForDate(date) : Promise.resolve(null),
-    steps === null ? getStepsForDate(date) : Promise.resolve(null),
+    (steps === null || isToday) ? getStepsForDate(date) : Promise.resolve(null),
   ])
 
   if (fsWeight.status === 'fulfilled' && fsWeight.value !== null) {

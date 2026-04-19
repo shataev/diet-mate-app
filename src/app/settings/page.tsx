@@ -26,9 +26,9 @@ export default function SettingsPage() {
     { key: 'vegetables_g', label: t.params.vegetables, unit: t.units.g, step: 50 },
     { key: 'avocado_g', label: t.params.avocado, unit: t.units.g, step: 10 },
     { key: 'calcium_mg', label: t.params.calcium, unit: t.units.mg, step: 50 },
-    { key: 'omega3_g', label: t.params.omega3, unit: t.units.g, step: 0.5 },
-    { key: 'eggs', label: t.params.eggs, unit: t.units.pcs, step: 1 },
-    { key: 'seafood_portions', label: t.params.seafood, unit: t.units.srv, step: 1 },
+    { key: 'omega3_g', label: t.params.omega3, unit: `${t.units.g} ${t.units.week}`, step: 0.5 },
+    { key: 'eggs', label: t.params.eggs, unit: `${t.units.pcs} ${t.units.week}`, step: 1 },
+    { key: 'seafood_portions', label: t.params.seafood, unit: `${t.units.srv} ${t.units.week}`, step: 1 },
     { key: 'steps_goal', label: t.params.stepsGoal, unit: t.units.pcs, step: 1000 },
   ]
 

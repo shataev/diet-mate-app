@@ -25,8 +25,8 @@ Categories:
 - vegetables: any vegetables, fruits, greens, herbs (tomato, apple, banana, spinach, parsley, carrot, etc.)
 - avocado: avocado and guacamole only
 - eggs: ONLY whole eggs or simple egg dishes where egg IS the dish (boiled egg, fried egg, scrambled eggs, omelette). NOT pastries, cakes, or dishes that merely contain egg as an ingredient (egg tart, egg roll, quiche, etc.)
-- seafood: fish, shrimp, mussels, squid, tuna, salmon, seafood mix, etc.
-- other: everything else (meat, dairy, grains, nuts, oils, sauces, sweets, pastries, processed foods, etc.)`,
+- seafood: shellfish and mollusks ONLY — shrimp, mussels, clams, oysters, squid, octopus, crab, lobster, scallops, seafood mix. NOT fish of any kind.
+- other: everything else including ALL fish (salmon, tuna, cod, mackerel, herring, sardines, trout, etc.), meat, dairy, grains, nuts, oils, sauces, sweets, pastries, processed foods, etc.`,
       },
       {
         role: 'user',
@@ -80,8 +80,8 @@ Categories: vegetables, avocado, eggs, seafood, other
 - vegetables: any vegetables, fruits, greens, herbs (tomato, apple, banana, spinach, etc.)
 - avocado: avocado and guacamole only
 - eggs: ONLY whole eggs or simple egg dishes where egg IS the dish (boiled egg, fried egg, scrambled eggs, omelette). NOT pastries, cakes, or dishes that merely contain egg as ingredient (egg tart, egg roll, quiche, etc.)
-- seafood: fish, shrimp, mussels, squid, tuna, salmon, seafood mix, etc.
-- other: everything else (meat, dairy, grains, nuts, oils, sauces, sweets, pastries, processed foods, etc.)`,
+- seafood: shellfish and mollusks ONLY — shrimp, mussels, clams, oysters, squid, octopus, crab, lobster, scallops, seafood mix. NOT fish of any kind.
+- other: everything else including ALL fish (salmon, tuna, cod, mackerel, herring, sardines, trout, etc.), meat, dairy, grains, nuts, oils, sauces, sweets, pastries, processed foods, etc.`,
       },
       {
         role: 'user',
