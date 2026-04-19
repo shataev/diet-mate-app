@@ -59,7 +59,7 @@ function TrendChart({
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
       {goalY !== null && (
         <line x1={PAD} y1={goalY} x2={W - PAD} y2={goalY}
-          stroke="var(--border)" strokeWidth="1" strokeDasharray="4 3" />
+          stroke="var(--border)" strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />
       )}
       {type === 'bar' && days.map((d, i) => {
         const v = getValue(d)
@@ -167,7 +167,7 @@ export default function WeeklyPage() {
       {/* Weight + Steps */}
       <div className="grid grid-cols-2 gap-3">
         <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{t.weekly.weightLatest}</div>
+          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{t.weekly.weightLatest}</div>
           <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
             {daysWithWeight.length > 0 ? `${daysWithWeight[daysWithWeight.length - 1].weight_kg}` : '—'}
           </div>
@@ -181,7 +181,7 @@ export default function WeeklyPage() {
           })()}
         </div>
         <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{t.weekly.avgSteps}</div>
+          <div className="text-xs mb-1" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>{t.weekly.avgSteps}</div>
           <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
             {data.avgSteps > 0 ? data.avgSteps.toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US') : '—'}
           </div>
@@ -215,7 +215,7 @@ export default function WeeklyPage() {
         },
       ].map(({ label, unit, getValue, goal, color, type }) => (
         <div key={label} className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <div className="text-xs font-medium mb-2 flex items-center justify-between" style={{ color: 'var(--text-muted)' }}>
+          <div className="text-xs font-medium mb-2 flex items-center justify-between" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
             <span>{label}</span>
             {unit && <span>{unit}</span>}
           </div>
