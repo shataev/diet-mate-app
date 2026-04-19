@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { getWeightForDate } from '@/lib/fatsecret'
+import { getStepsForDate } from '@/lib/garmin'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -11,25 +12,35 @@ export async function GET(request: NextRequest) {
     .prepare('SELECT * FROM daily_log WHERE date = ?')
     .get(dateStr) as { date: string; weight_kg: number | null; steps: number | null } | undefined
 
-  // Pull weight from Fatsecret if not stored locally
+  const date = new Date(dateStr + 'T12:00:00')
+
   let weight_kg = log?.weight_kg ?? null
-  if (weight_kg === null) {
-    try {
-      const date = new Date(dateStr + 'T12:00:00')
-      weight_kg = await getWeightForDate(date)
-      if (weight_kg !== null) {
-        db.prepare(`
-          INSERT INTO daily_log (date, weight_kg, steps)
-          VALUES (?, ?, ?)
-          ON CONFLICT(date) DO UPDATE SET weight_kg = excluded.weight_kg, updated_at = datetime('now')
-        `).run(dateStr, weight_kg, log?.steps ?? null)
-      }
-    } catch {
-      // Fatsecret unavailable — use local value
-    }
+  let steps = log?.steps ?? null
+
+  const [fsWeight, garminSteps] = await Promise.allSettled([
+    weight_kg === null ? getWeightForDate(date) : Promise.resolve(null),
+    steps === null ? getStepsForDate(date) : Promise.resolve(null),
+  ])
+
+  if (fsWeight.status === 'fulfilled' && fsWeight.value !== null) {
+    weight_kg = fsWeight.value
+  }
+  if (garminSteps.status === 'fulfilled' && garminSteps.value !== null) {
+    steps = garminSteps.value
   }
 
-  return NextResponse.json({ date: dateStr, weight_kg, steps: log?.steps ?? null })
+  if (weight_kg !== (log?.weight_kg ?? null) || steps !== (log?.steps ?? null)) {
+    db.prepare(`
+      INSERT INTO daily_log (date, weight_kg, steps)
+      VALUES (?, ?, ?)
+      ON CONFLICT(date) DO UPDATE SET
+        weight_kg = COALESCE(excluded.weight_kg, weight_kg),
+        steps = COALESCE(excluded.steps, steps),
+        updated_at = datetime('now')
+    `).run(dateStr, weight_kg, steps)
+  }
+
+  return NextResponse.json({ date: dateStr, weight_kg, steps })
 }
 
 export async function POST(request: NextRequest) {
