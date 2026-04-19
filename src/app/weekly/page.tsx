@@ -59,7 +59,7 @@ function TrendChart({
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
       {goalY !== null && (
         <line x1={PAD} y1={goalY} x2={W - PAD} y2={goalY}
-          stroke="rgba(128,128,128,0.2)" strokeWidth="1" strokeDasharray="4 3" />
+          stroke="rgba(180,180,180,0.5)" strokeWidth="1.5" strokeDasharray="4 3" />
       )}
       {type === 'bar' && days.map((d, i) => {
         const v = getValue(d)
