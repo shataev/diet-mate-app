@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { getDailyNutrition } from '@/lib/nutrition'
 import { getWeightForDate } from '@/lib/fatsecret'
-import { getStepsForDate } from '@/lib/garmin'
 import { Goals, DailyNutrition } from '@/types'
 
 export async function GET(request: NextRequest) {
@@ -32,16 +31,14 @@ export async function GET(request: NextRequest) {
       let weight_kg = log?.weight_kg ?? null
       let steps = log?.steps ?? null
 
-      const [nutrition, fsWeight, garminSteps] = await Promise.all([
+      const [nutrition, fsWeight] = await Promise.all([
         getDailyNutrition(date),
         weight_kg === null ? getWeightForDate(date).catch(() => null) : Promise.resolve(null),
-        steps === null ? getStepsForDate(date).catch(() => null) : Promise.resolve(null),
       ])
 
       if (fsWeight !== null) weight_kg = fsWeight
-      if (garminSteps !== null) steps = garminSteps
 
-      if (fsWeight !== null || garminSteps !== null) {
+      if (fsWeight !== null) {
         db.prepare(`
           INSERT INTO daily_log (date, weight_kg, steps)
           VALUES (?, ?, ?)
