@@ -43,26 +43,31 @@ function ProgressBar({ label, current, goal, unit, format }: ProgressBarProps) {
   )
 }
 
+interface WeightPoint {
+  date: string
+  weight_kg: number | null
+}
+
 export default function Dashboard() {
   const { t, lang } = useLang()
   const today = new Date().toISOString().slice(0, 10)
 
   const [nutrition, setNutrition] = useState<DailyNutrition | null>(null)
   const [goals, setGoals] = useState<Goals | null>(null)
-  const [weight, setWeight] = useState('')
-  const [steps, setSteps] = useState('')
+  const [weightHistory, setWeightHistory] = useState<WeightPoint[]>([])
+  const [steps, setSteps] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
   const load = useCallback(async () => {
-    const [goalsRes, logRes] = await Promise.all([
+    const [goalsRes, logRes, historyRes] = await Promise.all([
       fetch('/api/goals').then((r) => r.json()),
       fetch(`/api/daily-log?date=${today}`).then((r) => r.json()),
+      fetch('/api/weight-history').then((r) => r.json()),
     ])
     setGoals(goalsRes)
-    if (logRes.weight_kg) setWeight(String(logRes.weight_kg))
-    if (logRes.steps) setSteps(String(logRes.steps))
+    if (logRes.steps) setSteps(logRes.steps)
+    setWeightHistory(historyRes)
   }, [today])
 
   const loadNutrition = useCallback(async () => {
@@ -77,20 +82,6 @@ export default function Dashboard() {
     load()
     loadNutrition()
   }, [load, loadNutrition])
-
-  const saveLog = async () => {
-    setSaving(true)
-    await fetch('/api/daily-log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        date: today,
-        weight_kg: weight ? parseFloat(weight) : null,
-        steps: steps ? parseInt(steps) : null,
-      }),
-    })
-    setSaving(false)
-  }
 
   if (loading || !goals) {
     return (
@@ -129,52 +120,40 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div
-        className="grid grid-cols-2 gap-3 mb-4 p-4 rounded-xl"
-        style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-      >
-        <div>
-          <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div
+          className="px-4 py-3 rounded-xl flex flex-col gap-1"
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
             {t.dashboard.weight}
-          </label>
-          <input
-            type="number"
-            step="0.1"
-            placeholder="—"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            onBlur={saveLog}
-            className="w-full text-sm px-3 py-2 rounded-lg outline-none"
-            style={{
-              backgroundColor: 'var(--surface2)',
-              border: '1px solid var(--border)',
-              color: 'var(--text)',
-            }}
-          />
+          </span>
+          <span className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+            {weightHistory.findLast((d) => d.weight_kg !== null)?.weight_kg?.toFixed(1) ?? '—'}
+          </span>
         </div>
-        <div>
-          <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>
+
+        <div
+          className="px-4 py-3 rounded-xl flex flex-col gap-1"
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
             {t.dashboard.steps}
-          </label>
-          <input
-            type="number"
-            placeholder="—"
-            value={steps}
-            onChange={(e) => setSteps(e.target.value)}
-            onBlur={saveLog}
-            className="w-full text-sm px-3 py-2 rounded-lg outline-none"
-            style={{
-              backgroundColor: 'var(--surface2)',
-              border: '1px solid var(--border)',
-              color: 'var(--text)',
-            }}
-          />
-        </div>
-        {saving && (
-          <div className="col-span-2 text-xs text-right" style={{ color: 'var(--text-muted)' }}>
-            {t.dashboard.saving}
+          </span>
+          <div className="flex items-baseline gap-1 flex-wrap">
+            <span
+              className="text-2xl font-bold"
+              style={{ color: steps >= goals.steps_goal ? 'var(--success)' : 'var(--text)' }}
+            >
+              {steps > 0 ? steps.toLocaleString() : '—'}
+            </span>
+            {goals.steps_goal > 0 && steps > 0 && (
+              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                of {goals.steps_goal.toLocaleString()}
+              </span>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">

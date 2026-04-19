@@ -22,6 +22,7 @@ export const translations = {
       omega3: 'Omega-3',
       eggs: 'Eggs',
       seafood: 'Seafood',
+      stepsGoal: 'Steps goal',
     },
     units: {
       kcal: 'kcal',
@@ -70,6 +71,7 @@ export const translations = {
       omega3: 'Омега-3',
       eggs: 'Яйца',
       seafood: 'Морепродукты',
+      stepsGoal: 'Цель по шагам',
     },
     units: {
       kcal: 'ккал',

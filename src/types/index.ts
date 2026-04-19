@@ -6,6 +6,7 @@ export interface Goals {
   omega3_g: number
   eggs: number
   seafood_portions: number
+  steps_goal: number
 }
 
 export interface DailyLog {

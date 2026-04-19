@@ -55,4 +55,10 @@ function initSchema(db: Database.Database) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `)
+
+  try {
+    db.exec(`ALTER TABLE goals ADD COLUMN steps_goal INTEGER NOT NULL DEFAULT 10000`)
+  } catch {
+    // column already exists
+  }
 }

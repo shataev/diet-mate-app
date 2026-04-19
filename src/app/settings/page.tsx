@@ -12,6 +12,7 @@ const DEFAULTS: Goals = {
   omega3_g: 2,
   eggs: 3,
   seafood_portions: 3,
+  steps_goal: 10000,
 }
 
 export default function SettingsPage() {
@@ -28,6 +29,7 @@ export default function SettingsPage() {
     { key: 'omega3_g', label: t.params.omega3, unit: t.units.g, step: 0.5 },
     { key: 'eggs', label: t.params.eggs, unit: t.units.pcs, step: 1 },
     { key: 'seafood_portions', label: t.params.seafood, unit: t.units.srv, step: 1 },
+    { key: 'steps_goal', label: t.params.stepsGoal, unit: t.units.pcs, step: 1000 },
   ]
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function SettingsPage() {
           omega3_g: data.omega3_g,
           eggs: data.eggs,
           seafood_portions: data.seafood_portions,
+          steps_goal: data.steps_goal ?? 10000,
         })
         setLoading(false)
       })
