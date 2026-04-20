@@ -38,6 +38,11 @@ export function isAuthorized(): boolean {
   }
 }
 
+let authError = false
+
+export function hasAuthError(): boolean { return authError }
+export function clearAuthError(): void { authError = false }
+
 async function callApi(method: string, extraParams: Record<string, string>): Promise<unknown> {
   const userTokens = getUserTokens()
   const allParams = buildOAuthParams(
@@ -55,7 +60,12 @@ async function callApi(method: string, extraParams: Record<string, string>): Pro
     body: new URLSearchParams(allParams),
   })
 
+  if (res.status === 401 || res.status === 403) {
+    authError = true
+    throw new Error(`Fatsecret API error: ${res.statusText}`)
+  }
   if (!res.ok) throw new Error(`Fatsecret API error: ${res.statusText}`)
+  authError = false
   return res.json()
 }
 

@@ -74,6 +74,13 @@ export default function Dashboard() {
   const [steps, setSteps] = useState(0)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [authError, setAuthError] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/auth/status').then(r => r.json()).then(d => {
+      setAuthError(!d.authorized || d.authError)
+    })
+  }, [])
 
   const load = useCallback(async () => {
     const [goalsRes, logRes, historyRes] = await Promise.all([
@@ -132,6 +139,16 @@ export default function Dashboard() {
 
   return (
     <div>
+      {authError && (
+        <a
+          href="/api/auth/start"
+          className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl text-sm"
+          style={{ backgroundColor: '#7f1d1d', color: '#fca5a5', border: '1px solid #991b1b' }}
+        >
+          <span>⚠️</span>
+          <span>Fatsecret session expired. Tap to reconnect.</span>
+        </a>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <button
