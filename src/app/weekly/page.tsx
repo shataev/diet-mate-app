@@ -42,7 +42,7 @@ function TrendChart({
   const max = Math.max(...defined, goal ?? 0) * 1.05 || 1
   const range = max - min || 1
 
-  const xStep = (W - PAD * 2) / (days.length - 1)
+  const xStep = days.length > 1 ? (W - PAD * 2) / (days.length - 1) : 0
   const yScale = (v: number) => H - BOTTOM - ((v - min) / range) * (H - BOTTOM - PAD)
 
   const barW = (W - PAD * 2) / days.length * 0.6
