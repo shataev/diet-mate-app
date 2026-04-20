@@ -71,10 +71,15 @@ function TrendChart({
         if (v === null) return null
         const barH = Math.max(2, ((v - min) / range) * (H - BOTTOM - PAD))
         const hit = goal !== undefined ? v >= goal : true
+        const cx = barX(i) + barW / 2
+        const labelY = H - BOTTOM - barH - 3
         return (
           <g key={d.date}>
             <rect x={barX(i)} y={H - BOTTOM - barH} width={barW} height={barH}
               fill={hit ? color : 'var(--danger)'} rx="2" opacity="0.85" />
+            <text x={cx} y={Math.max(labelY, 8)} textAnchor="middle" fontSize="9" fill="var(--text)">
+              {typeof v === 'number' ? v.toLocaleString() : v}
+            </text>
           </g>
         )
       })}
@@ -94,7 +99,17 @@ function TrendChart({
             {days.map((d, i) => {
               const v = getValue(d)
               if (v === null) return null
-              return <circle key={d.date} cx={PAD + i * xStep} cy={yScale(v)} r="3" fill={color} />
+              const cx = PAD + i * xStep
+              const cy = yScale(v)
+              const labelY = cy > 12 ? cy - 5 : cy + 12
+              return (
+                <g key={d.date}>
+                  <circle cx={cx} cy={cy} r="3" fill={color} />
+                  <text x={cx} y={labelY} textAnchor="middle" fontSize="9" fill="var(--text)">
+                    {typeof v === 'number' ? v.toLocaleString() : v}
+                  </text>
+                </g>
+              )
             })}
           </>
         )
