@@ -48,6 +48,14 @@ interface WeightPoint {
   weight_kg: number | null
 }
 
+function getMondayOf(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  return d.toISOString().slice(0, 10)
+}
+
 function shiftDate(dateStr: string, days: number): string {
   const d = new Date(dateStr + 'T12:00:00')
   d.setDate(d.getDate() + days)
@@ -82,7 +90,7 @@ export default function Dashboard() {
     setRefreshing(true)
     const [dailyData, weeklyData] = await Promise.all([
       fetch(`/api/nutrition?date=${selectedDate}`).then((r) => r.json()),
-      fetch(`/api/weekly?date=${selectedDate}`).then((r) => r.json()),
+      fetch(`/api/weekly?weekStart=${getMondayOf(selectedDate)}`).then((r) => r.json()),
     ])
     setNutrition(dailyData)
     const days: { nutrition: DailyNutrition }[] = weeklyData.days ?? []

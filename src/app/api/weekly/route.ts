@@ -6,16 +6,25 @@ import { getDailyNutrition } from '@/lib/nutrition'
 import { getWeightForDate } from '@/lib/fatsecret'
 import { Goals, DailyNutrition } from '@/types'
 
+function getMondayOf(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const day = d.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+  const diff = day === 0 ? -6 : 1 - day // shift to Monday
+  d.setDate(d.getDate() + diff)
+  return d.toISOString().slice(0, 10)
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const endDateStr = searchParams.get('date') ?? new Date().toISOString().slice(0, 10)
-  const endDate = new Date(endDateStr + 'T12:00:00')
+  const today = new Date().toISOString().slice(0, 10)
+  const weekStart = searchParams.get('weekStart') ?? getMondayOf(today)
 
   const days: string[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(endDate)
-    d.setDate(d.getDate() - i)
-    days.push(d.toISOString().slice(0, 10))
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart + 'T12:00:00')
+    d.setDate(d.getDate() + i)
+    const dateStr = d.toISOString().slice(0, 10)
+    if (dateStr <= today) days.push(dateStr)
   }
 
   const db = getDb()

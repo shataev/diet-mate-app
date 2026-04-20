@@ -128,10 +128,28 @@ function dayColor(score: number, total: number) {
   return 'var(--danger)'
 }
 
+function getMondayOf(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  return d.toISOString().slice(0, 10)
+}
+
+function addWeeks(weekStart: string, n: number): string {
+  const d = new Date(weekStart + 'T12:00:00')
+  d.setDate(d.getDate() + n * 7)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function WeeklyPage() {
   const { t, lang } = useLang()
   const [data, setData] = useState<WeeklyData | null>(null)
   const [loading, setLoading] = useState(true)
+  const today = new Date().toISOString().slice(0, 10)
+  const [weekStart, setWeekStart] = useState(() => getMondayOf(today))
+  const currentWeekStart = getMondayOf(today)
+  const isCurrentWeek = weekStart === currentWeekStart
 
   const DAILY_PARAMS: { key: string; label: string; unit: string; getValue: (n: DailyNutrition) => string | number }[] = [
     { key: 'calories', label: t.params.calories, unit: t.units.kcal, getValue: (n) => n.calories },
@@ -142,11 +160,11 @@ export default function WeeklyPage() {
   ]
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10)
-    fetch(`/api/weekly?date=${today}`)
+    setLoading(true)
+    fetch(`/api/weekly?weekStart=${weekStart}`)
       .then((r) => r.json())
       .then((d) => { setData(d); setLoading(false) })
-  }, [])
+  }, [weekStart])
 
   if (loading || !data) {
     return (
@@ -163,11 +181,32 @@ export default function WeeklyPage() {
   const weeklyEggs = days.reduce((s, d) => s + d.nutrition.eggs, 0)
   const weeklySeafood = days.reduce((s, d) => s + d.nutrition.seafood_portions, 0)
 
+  const weekEnd = addWeeks(weekStart, 1)
+  const weekEndDate = new Date(weekEnd + 'T12:00:00')
+  weekEndDate.setDate(weekEndDate.getDate() - 1)
+  const weekLabel = `${new Date(weekStart + 'T12:00:00').toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })} – ${weekEndDate.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}`
+
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>
-        {t.weekly.title}
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>
+          {t.weekly.title}
+        </h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setWeekStart(addWeeks(weekStart, -1))}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+            style={{ backgroundColor: 'var(--surface2)', color: 'var(--text)' }}
+          >‹</button>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{weekLabel}</span>
+          <button
+            onClick={() => setWeekStart(addWeeks(weekStart, 1))}
+            disabled={isCurrentWeek}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
+            style={{ backgroundColor: 'var(--surface2)', color: isCurrentWeek ? 'var(--border)' : 'var(--text)' }}
+          >›</button>
+        </div>
+      </div>
 
       {/* Weight + Steps */}
       <div className="grid grid-cols-2 gap-3">
