@@ -95,19 +95,24 @@ export default function Dashboard() {
 
   const loadNutrition = useCallback(async () => {
     setRefreshing(true)
-    const [dailyData, weeklyData] = await Promise.all([
-      fetch(`/api/nutrition?date=${selectedDate}`).then((r) => r.json()),
-      fetch(`/api/weekly?weekStart=${getMondayOf(selectedDate)}`).then((r) => r.json()),
-    ])
-    setNutrition(dailyData)
-    const days: { nutrition: DailyNutrition }[] = weeklyData.days ?? []
-    setWeeklyTotals({
-      omega3_g: days.reduce((s, d) => s + (d.nutrition.omega3_g ?? 0), 0),
-      eggs: days.reduce((s, d) => s + (d.nutrition.eggs ?? 0), 0),
-      seafood_portions: days.reduce((s, d) => s + (d.nutrition.seafood_portions ?? 0), 0),
-    })
-    setRefreshing(false)
-    setLoading(false)
+    try {
+      const [dailyData, weeklyData] = await Promise.all([
+        fetch(`/api/nutrition?date=${selectedDate}`).then((r) => r.ok ? r.json() : null),
+        fetch(`/api/weekly?weekStart=${getMondayOf(selectedDate)}`).then((r) => r.ok ? r.json() : null),
+      ])
+      if (dailyData) setNutrition(dailyData)
+      const days: { nutrition: DailyNutrition }[] = weeklyData?.days ?? []
+      setWeeklyTotals({
+        omega3_g: days.reduce((s, d) => s + (d.nutrition.omega3_g ?? 0), 0),
+        eggs: days.reduce((s, d) => s + (d.nutrition.eggs ?? 0), 0),
+        seafood_portions: days.reduce((s, d) => s + (d.nutrition.seafood_portions ?? 0), 0),
+      })
+    } catch {
+      // auth error handled by banner
+    } finally {
+      setRefreshing(false)
+      setLoading(false)
+    }
   }, [selectedDate])
 
   useEffect(() => {
