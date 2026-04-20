@@ -14,12 +14,14 @@ export async function GET(request: NextRequest) {
     .get(dateStr) as { date: string; weight_kg: number | null; steps: number | null } | undefined
 
   const date = new Date(dateStr + 'T12:00:00')
+  const today = new Date().toISOString().slice(0, 10)
+  const isToday = dateStr === today
 
   let weight_kg = log?.weight_kg ?? null
   let steps = log?.steps ?? null
 
   const [fsWeight] = await Promise.allSettled([
-    weight_kg === null ? getWeightForDate(date) : Promise.resolve(null),
+    (weight_kg === null || isToday) ? getWeightForDate(date) : Promise.resolve(null),
   ])
 
   if (fsWeight.status === 'fulfilled' && fsWeight.value !== null) {
