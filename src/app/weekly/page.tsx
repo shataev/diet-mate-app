@@ -128,25 +128,29 @@ function dayColor(score: number, total: number) {
   return 'var(--danger)'
 }
 
+function localDate(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function getMondayOf(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00')
   const day = d.getDay()
   const diff = day === 0 ? -6 : 1 - day
   d.setDate(d.getDate() + diff)
-  return d.toISOString().slice(0, 10)
+  return localDate(d)
 }
 
 function addWeeks(weekStart: string, n: number): string {
   const d = new Date(weekStart + 'T12:00:00')
   d.setDate(d.getDate() + n * 7)
-  return d.toISOString().slice(0, 10)
+  return localDate(d)
 }
 
 export default function WeeklyPage() {
   const { t, lang } = useLang()
   const [data, setData] = useState<WeeklyData | null>(null)
   const [loading, setLoading] = useState(true)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDate()
   const [weekStart, setWeekStart] = useState(() => getMondayOf(today))
   const currentWeekStart = getMondayOf(today)
   const isCurrentWeek = weekStart === currentWeekStart

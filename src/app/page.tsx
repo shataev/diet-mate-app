@@ -48,23 +48,27 @@ interface WeightPoint {
   weight_kg: number | null
 }
 
+function localDate(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function getMondayOf(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00')
   const day = d.getDay()
   const diff = day === 0 ? -6 : 1 - day
   d.setDate(d.getDate() + diff)
-  return d.toISOString().slice(0, 10)
+  return localDate(d)
 }
 
 function shiftDate(dateStr: string, days: number): string {
   const d = new Date(dateStr + 'T12:00:00')
   d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+  return localDate(d)
 }
 
 export default function Dashboard() {
   const { t, lang } = useLang()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDate()
 
   const [selectedDate, setSelectedDate] = useState(today)
   const [nutrition, setNutrition] = useState<DailyNutrition | null>(null)
