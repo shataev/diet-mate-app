@@ -205,7 +205,7 @@ export default function Dashboard() {
           </button>
         </div>
         <button
-          onClick={loadNutrition}
+          onClick={() => { load(); loadNutrition() }}
           disabled={refreshing}
           className="text-sm px-3 py-1.5 rounded-lg"
           style={{
