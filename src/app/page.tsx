@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Goals, DailyNutrition } from '@/types'
 import { useLang } from '@/contexts/LanguageContext'
 
@@ -82,6 +82,7 @@ export default function Dashboard() {
   const [editingWeight, setEditingWeight] = useState(false)
   const [weightInput, setWeightInput] = useState('')
   const [savingWeight, setSavingWeight] = useState(false)
+  const weightCardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/auth/status').then(r => r.json()).then(d => {
@@ -137,6 +138,17 @@ export default function Dashboard() {
     setEditingWeight(false)
     setSavingWeight(false)
   }, [weightInput, selectedDate])
+
+  useEffect(() => {
+    if (!editingWeight) return
+    const handler = (e: MouseEvent) => {
+      if (weightCardRef.current && !weightCardRef.current.contains(e.target as Node)) {
+        setEditingWeight(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [editingWeight])
 
   useEffect(() => {
     setNutrition(null)
@@ -220,6 +232,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div
+          ref={weightCardRef}
           className="px-4 py-3 rounded-xl flex flex-col gap-1"
           style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
         >
@@ -227,7 +240,14 @@ export default function Dashboard() {
             <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
               {t.dashboard.weight}
             </span>
-            {!editingWeight && (
+            {editingWeight ? (
+              <button
+                onClick={saveWeight}
+                disabled={savingWeight}
+                className="text-base leading-none"
+                style={{ color: 'var(--success)' }}
+              >✓</button>
+            ) : (
               <button
                 onClick={() => {
                   const w = weightHistory.find((d) => d.date === selectedDate)?.weight_kg
@@ -240,33 +260,20 @@ export default function Dashboard() {
             )}
           </div>
           {editingWeight ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                step="0.01"
-                min="1"
-                value={weightInput}
-                onChange={(e) => setWeightInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveWeight()
-                  if (e.key === 'Escape') setEditingWeight(false)
-                }}
-                autoFocus
-                className="text-xl font-bold w-24 bg-transparent border-b-2 outline-none"
-                style={{ color: 'var(--text)', borderColor: 'var(--accent)' }}
-              />
-              <button
-                onClick={saveWeight}
-                disabled={savingWeight}
-                className="text-lg"
-                style={{ color: 'var(--success)' }}
-              >✓</button>
-              <button
-                onClick={() => setEditingWeight(false)}
-                className="text-lg"
-                style={{ color: 'var(--text-muted)' }}
-              >✗</button>
-            </div>
+            <input
+              type="number"
+              step="0.01"
+              min="1"
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveWeight()
+                if (e.key === 'Escape') setEditingWeight(false)
+              }}
+              autoFocus
+              className="text-xl font-bold w-24 bg-transparent border-b-2 outline-none"
+              style={{ color: 'var(--text)', borderColor: 'var(--accent)' }}
+            />
           ) : (
             <span
               className="text-2xl font-bold"
