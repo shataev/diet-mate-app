@@ -223,9 +223,22 @@ export default function Dashboard() {
           className="px-4 py-3 rounded-xl flex flex-col gap-1"
           style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-            {t.dashboard.weight}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+              {t.dashboard.weight}
+            </span>
+            {!editingWeight && (
+              <button
+                onClick={() => {
+                  const w = weightHistory.find((d) => d.date === selectedDate)?.weight_kg
+                  setWeightInput(w != null ? String(w) : '')
+                  setEditingWeight(true)
+                }}
+                className="text-base leading-none inline-block"
+                style={{ color: 'var(--text)', opacity: 0.8, transform: 'scaleX(-1)' }}
+              >✎</button>
+            )}
+          </div>
           {editingWeight ? (
             <div className="flex items-center gap-2">
               <input
@@ -255,18 +268,12 @@ export default function Dashboard() {
               >✗</button>
             </div>
           ) : (
-            <button
-              className="text-2xl font-bold text-left flex items-baseline gap-2"
+            <span
+              className="text-2xl font-bold"
               style={{ color: 'var(--text)' }}
-              onClick={() => {
-                const w = weightHistory.find((d) => d.date === selectedDate)?.weight_kg
-                setWeightInput(w != null ? String(w) : '')
-                setEditingWeight(true)
-              }}
             >
               {weightHistory.find((d) => d.date === selectedDate)?.weight_kg?.toFixed(2) ?? '—'}
-              <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>✎</span>
-            </button>
+            </span>
           )}
         </div>
 
