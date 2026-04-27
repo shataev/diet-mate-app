@@ -79,6 +79,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [authError, setAuthError] = useState(false)
+  const [editingWeight, setEditingWeight] = useState(false)
+  const [weightInput, setWeightInput] = useState('')
+  const [savingWeight, setSavingWeight] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/status').then(r => r.json()).then(d => {
@@ -119,10 +122,27 @@ export default function Dashboard() {
     }
   }, [selectedDate])
 
+  const saveWeight = useCallback(async () => {
+    const val = parseFloat(weightInput)
+    if (isNaN(val) || val <= 0) return
+    setSavingWeight(true)
+    await fetch('/api/daily-log', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: selectedDate, weight_kg: val }),
+    })
+    setWeightHistory((prev) =>
+      prev.map((d) => d.date === selectedDate ? { ...d, weight_kg: val } : d)
+    )
+    setEditingWeight(false)
+    setSavingWeight(false)
+  }, [weightInput, selectedDate])
+
   useEffect(() => {
     setNutrition(null)
     setWeeklyTotals(null)
     setSteps(0)
+    setEditingWeight(false)
     load()
     loadNutrition()
   }, [load, loadNutrition])
@@ -206,9 +226,48 @@ export default function Dashboard() {
           <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
             {t.dashboard.weight}
           </span>
-          <span className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-            {weightHistory.find((d) => d.date === selectedDate)?.weight_kg?.toFixed(2) ?? '—'}
-          </span>
+          {editingWeight ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                step="0.01"
+                min="1"
+                value={weightInput}
+                onChange={(e) => setWeightInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveWeight()
+                  if (e.key === 'Escape') setEditingWeight(false)
+                }}
+                autoFocus
+                className="text-xl font-bold w-24 bg-transparent border-b-2 outline-none"
+                style={{ color: 'var(--text)', borderColor: 'var(--accent)' }}
+              />
+              <button
+                onClick={saveWeight}
+                disabled={savingWeight}
+                className="text-lg"
+                style={{ color: 'var(--success)' }}
+              >✓</button>
+              <button
+                onClick={() => setEditingWeight(false)}
+                className="text-lg"
+                style={{ color: 'var(--text-muted)' }}
+              >✗</button>
+            </div>
+          ) : (
+            <button
+              className="text-2xl font-bold text-left flex items-baseline gap-2"
+              style={{ color: 'var(--text)' }}
+              onClick={() => {
+                const w = weightHistory.find((d) => d.date === selectedDate)?.weight_kg
+                setWeightInput(w != null ? String(w) : '')
+                setEditingWeight(true)
+              }}
+            >
+              {weightHistory.find((d) => d.date === selectedDate)?.weight_kg?.toFixed(2) ?? '—'}
+              <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>✎</span>
+            </button>
+          )}
         </div>
 
         <div

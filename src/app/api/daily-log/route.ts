@@ -42,6 +42,19 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ date: dateStr, weight_kg, steps })
 }
 
+export async function PATCH(request: NextRequest) {
+  const { date, weight_kg } = await request.json()
+  const db = getDb()
+  db.prepare(`
+    INSERT INTO daily_log (date, weight_kg)
+    VALUES (?, ?)
+    ON CONFLICT(date) DO UPDATE SET
+      weight_kg = excluded.weight_kg,
+      updated_at = datetime('now')
+  `).run(date, weight_kg)
+  return NextResponse.json({ ok: true })
+}
+
 export async function POST(request: NextRequest) {
   const apiKey = process.env.DIET_MATE_API_KEY
   if (apiKey) {
