@@ -232,7 +232,7 @@ export default function WeeklyPage() {
         <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
           <div className="text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>{t.weekly.weightLatest}</div>
           <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-            {daysWithWeight.length > 0 ? `${daysWithWeight[daysWithWeight.length - 1].weight_kg}` : '—'}
+            {daysWithWeight.length > 0 ? `${daysWithWeight[daysWithWeight.length - 1].weight_kg?.toFixed(2)}` : '—'}
           </div>
           {daysWithWeight.length >= 2 && (() => {
             const diff = (daysWithWeight[daysWithWeight.length - 1].weight_kg ?? 0) - (daysWithWeight[0].weight_kg ?? 0)

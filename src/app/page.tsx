@@ -207,7 +207,7 @@ export default function Dashboard() {
             {t.dashboard.weight}
           </span>
           <span className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-            {weightHistory.find((d) => d.date === selectedDate)?.weight_kg?.toFixed(1) ?? '—'}
+            {weightHistory.find((d) => d.date === selectedDate)?.weight_kg?.toFixed(2) ?? '—'}
           </span>
         </div>
 
