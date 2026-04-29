@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
     INSERT INTO daily_log (date, weight_kg, steps)
     VALUES (?, ?, ?)
     ON CONFLICT(date) DO UPDATE SET
-      weight_kg = excluded.weight_kg,
-      steps = excluded.steps,
+      weight_kg = COALESCE(excluded.weight_kg, weight_kg),
+      steps = COALESCE(excluded.steps, steps),
       updated_at = datetime('now')
   `).run(date, weight_kg ?? null, steps ?? null)
 
