@@ -63,4 +63,8 @@ function initSchema(db: Database.Database) {
   try {
     db.exec(`ALTER TABLE goals ADD COLUMN protein_g INTEGER NOT NULL DEFAULT 120`)
   } catch {}
+
+  try {
+    db.exec(`ALTER TABLE food_cache ADD COLUMN omega3_per_unit REAL`)
+  } catch {}
 }

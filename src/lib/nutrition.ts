@@ -39,9 +39,12 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
 
     if (category === 'omega3') {
       const db = getDb()
-      const row = db.prepare('SELECT omega3_per_100g FROM food_cache WHERE food_name = ?')
-        .get(entry.food_entry_name.toLowerCase()) as { omega3_per_100g: number | null } | undefined
-      if (row?.omega3_per_100g) {
+      const row = db.prepare('SELECT omega3_per_100g, omega3_per_unit FROM food_cache WHERE food_name = ?')
+        .get(entry.food_entry_name.toLowerCase()) as { omega3_per_100g: number | null; omega3_per_unit: number | null } | undefined
+      const units = parseFloat(entry.number_of_units) || 1
+      if (row?.omega3_per_unit != null) {
+        result.omega3_g += row.omega3_per_unit * units
+      } else if (row?.omega3_per_100g) {
         result.omega3_g += row.omega3_per_100g * (grams / 100)
       }
     } else {
@@ -67,7 +70,15 @@ function getEntryGrams(entry: FatsecretDiaryEntry): number {
   // Standard food: "254 g Banana" — number_of_units IS grams (1g per unit)
   if (!desc.includes(':custom:')) return units
 
-  // Custom food: extract grams-per-serving from description
+  // Custom food: metric_serving_amount is the per-unit weight — most reliable source.
+  // FatSecret scales the gram value in description proportionally when units > 1,
+  // so parsing description and multiplying by units would double-count.
+  const metricAmount = parseFloat(entry.metric_serving_amount ?? '')
+  if (!isNaN(metricAmount) && metricAmount > 0 && entry.metric_serving_unit === 'g') {
+    return units * metricAmount
+  }
+
+  // Fallback: extract grams-per-serving from description
   // "(X g)" → e.g. "1 порция (340 g)"
   let m = desc.match(/\((\d+(?:\.\d+)?)\s*g\)/)
   if (m) return units * parseFloat(m[1])

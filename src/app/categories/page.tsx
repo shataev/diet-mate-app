@@ -28,6 +28,7 @@ interface CacheEntry {
   food_name: string
   category: FoodCategory
   omega3_per_100g: number | null
+  omega3_per_unit: number | null
 }
 
 export default function CategoriesPage() {
@@ -36,6 +37,7 @@ export default function CategoriesPage() {
   const [filter, setFilter] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
   const [omega3Editing, setOmega3Editing] = useState<Record<string, string>>({})
+  const [omega3UnitEditing, setOmega3UnitEditing] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetch('/api/food-cache')
@@ -71,10 +73,24 @@ export default function CategoriesPage() {
     i.food_name.toLowerCase().includes(filter.toLowerCase())
   )
 
+  const updateOmega3Unit = async (food_name: string, value: string) => {
+    const parsed = value === '' ? null : parseFloat(value)
+    if (value !== '' && (isNaN(parsed!) || parsed! < 0)) return
+    setSaving(food_name)
+    setItems((prev) => prev.map((i) => i.food_name === food_name ? { ...i, omega3_per_unit: parsed } : i))
+    await fetch('/api/food-cache', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ food_name, omega3_per_unit: parsed }),
+    })
+    setSaving(null)
+  }
+
   const title = lang === 'ru' ? 'Категории продуктов' : 'Food Categories'
   const searchPlaceholder = lang === 'ru' ? 'Поиск...' : 'Search...'
   const emptyText = lang === 'ru' ? 'Нет продуктов в кэше' : 'No cached foods yet'
-  const omega3Label = lang === 'ru' ? 'Омега-3, г/100г' : 'Omega-3, g/100g'
+  const omega3Label = lang === 'ru' ? 'г/100г' : 'g/100g'
+  const omega3UnitLabel = lang === 'ru' ? 'г/ед.' : 'g/unit'
 
   return (
     <div>
@@ -138,30 +154,53 @@ export default function CategoriesPage() {
                   ))}
                 </div>
                 {item.category === 'omega3' && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {omega3Label}
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      placeholder="—"
-                      value={omega3Editing[item.food_name] ?? (item.omega3_per_100g?.toString() ?? '')}
-                      onChange={(e) =>
-                        setOmega3Editing((prev) => ({ ...prev, [item.food_name]: e.target.value }))
-                      }
-                      onBlur={(e) => {
-                        updateOmega3(item.food_name, e.target.value)
-                        setOmega3Editing((prev) => { const n = { ...prev }; delete n[item.food_name]; return n })
-                      }}
-                      className="w-20 text-xs px-2 py-1 rounded-lg outline-none text-center"
-                      style={{
-                        backgroundColor: 'var(--surface2)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                      }}
-                    />
+                  <div className="flex items-center gap-4 mt-1 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{omega3UnitLabel}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="—"
+                        value={omega3UnitEditing[item.food_name] ?? (item.omega3_per_unit?.toString() ?? '')}
+                        onChange={(e) =>
+                          setOmega3UnitEditing((prev) => ({ ...prev, [item.food_name]: e.target.value }))
+                        }
+                        onBlur={(e) => {
+                          updateOmega3Unit(item.food_name, e.target.value)
+                          setOmega3UnitEditing((prev) => { const n = { ...prev }; delete n[item.food_name]; return n })
+                        }}
+                        className="w-20 text-xs px-2 py-1 rounded-lg outline-none text-center"
+                        style={{
+                          backgroundColor: 'var(--surface2)',
+                          border: `1px solid ${item.omega3_per_unit != null ? 'var(--accent)' : 'var(--border)'}`,
+                          color: 'var(--text)',
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{omega3Label}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        placeholder="—"
+                        value={omega3Editing[item.food_name] ?? (item.omega3_per_100g?.toString() ?? '')}
+                        onChange={(e) =>
+                          setOmega3Editing((prev) => ({ ...prev, [item.food_name]: e.target.value }))
+                        }
+                        onBlur={(e) => {
+                          updateOmega3(item.food_name, e.target.value)
+                          setOmega3Editing((prev) => { const n = { ...prev }; delete n[item.food_name]; return n })
+                        }}
+                        className="w-20 text-xs px-2 py-1 rounded-lg outline-none text-center"
+                        style={{
+                          backgroundColor: 'var(--surface2)',
+                          border: '1px solid var(--border)',
+                          color: item.omega3_per_unit != null ? 'var(--text-muted)' : 'var(--text)',
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
