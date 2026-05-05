@@ -43,15 +43,30 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const { date, weight_kg } = await request.json()
+  const body = await request.json()
+  const { date, weight_kg, steps } = body
   const db = getDb()
-  db.prepare(`
-    INSERT INTO daily_log (date, weight_kg)
-    VALUES (?, ?)
-    ON CONFLICT(date) DO UPDATE SET
-      weight_kg = excluded.weight_kg,
-      updated_at = datetime('now')
-  `).run(date, weight_kg)
+
+  if ('weight_kg' in body) {
+    db.prepare(`
+      INSERT INTO daily_log (date, weight_kg)
+      VALUES (?, ?)
+      ON CONFLICT(date) DO UPDATE SET
+        weight_kg = excluded.weight_kg,
+        updated_at = datetime('now')
+    `).run(date, weight_kg)
+  }
+
+  if ('steps' in body) {
+    db.prepare(`
+      INSERT INTO daily_log (date, steps)
+      VALUES (?, ?)
+      ON CONFLICT(date) DO UPDATE SET
+        steps = excluded.steps,
+        updated_at = datetime('now')
+    `).run(date, steps)
+  }
+
   return NextResponse.json({ ok: true })
 }
 

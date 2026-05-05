@@ -83,6 +83,10 @@ export default function Dashboard() {
   const [weightInput, setWeightInput] = useState('')
   const [savingWeight, setSavingWeight] = useState(false)
   const weightCardRef = useRef<HTMLDivElement>(null)
+  const [editingSteps, setEditingSteps] = useState(false)
+  const [stepsInput, setStepsInput] = useState('')
+  const [savingSteps, setSavingSteps] = useState(false)
+  const stepsCardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/auth/status').then(r => r.json()).then(d => {
@@ -139,6 +143,20 @@ export default function Dashboard() {
     setSavingWeight(false)
   }, [weightInput, selectedDate])
 
+  const saveSteps = useCallback(async () => {
+    const val = parseInt(stepsInput)
+    if (isNaN(val) || val < 0) return
+    setSavingSteps(true)
+    await fetch('/api/daily-log', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: selectedDate, steps: val }),
+    })
+    setSteps(val)
+    setEditingSteps(false)
+    setSavingSteps(false)
+  }, [stepsInput, selectedDate])
+
   useEffect(() => {
     if (!editingWeight) return
     const handler = (e: MouseEvent) => {
@@ -151,10 +169,22 @@ export default function Dashboard() {
   }, [editingWeight])
 
   useEffect(() => {
+    if (!editingSteps) return
+    const handler = (e: MouseEvent) => {
+      if (stepsCardRef.current && !stepsCardRef.current.contains(e.target as Node)) {
+        setEditingSteps(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [editingSteps])
+
+  useEffect(() => {
     setNutrition(null)
     setWeeklyTotals(null)
     setSteps(0)
     setEditingWeight(false)
+    setEditingSteps(false)
     load()
     loadNutrition()
   }, [load, loadNutrition])
@@ -285,25 +315,62 @@ export default function Dashboard() {
         </div>
 
         <div
+          ref={stepsCardRef}
           className="px-4 py-3 rounded-xl flex flex-col gap-1"
           style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-            {t.dashboard.steps}
-          </span>
-          <div className="flex items-baseline gap-1 flex-wrap">
-            <span
-              className="text-2xl font-bold"
-              style={{ color: steps >= goals.steps_goal ? 'var(--success)' : 'var(--text)' }}
-            >
-              {steps > 0 ? steps.toLocaleString() : '—'}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+              {t.dashboard.steps}
             </span>
-            {goals.steps_goal > 0 && steps > 0 && (
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                of {goals.steps_goal.toLocaleString()}
-              </span>
+            {editingSteps ? (
+              <button
+                onClick={saveSteps}
+                disabled={savingSteps}
+                className="text-base leading-none"
+                style={{ color: 'var(--success)' }}
+              >✓</button>
+            ) : (
+              <button
+                onClick={() => {
+                  setStepsInput(steps > 0 ? String(steps) : '')
+                  setEditingSteps(true)
+                }}
+                className="text-base leading-none inline-block"
+                style={{ color: 'var(--text)', opacity: 0.8, transform: 'scaleX(-1)' }}
+              >✎</button>
             )}
           </div>
+          {editingSteps ? (
+            <input
+              type="number"
+              step="1"
+              min="0"
+              value={stepsInput}
+              onChange={(e) => setStepsInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveSteps()
+                if (e.key === 'Escape') setEditingSteps(false)
+              }}
+              autoFocus
+              className="text-xl font-bold w-28 bg-transparent border-b-2 outline-none"
+              style={{ color: 'var(--text)', borderColor: 'var(--accent)' }}
+            />
+          ) : (
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span
+                className="text-2xl font-bold"
+                style={{ color: steps >= goals.steps_goal ? 'var(--success)' : 'var(--text)' }}
+              >
+                {steps > 0 ? steps.toLocaleString() : '—'}
+              </span>
+              {goals.steps_goal > 0 && steps > 0 && (
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  of {goals.steps_goal.toLocaleString()}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
