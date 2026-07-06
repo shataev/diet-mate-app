@@ -1,8 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Goals } from '@/types'
+import { Goals, Profile, Gender } from '@/types'
 import { useLang } from '@/contexts/LanguageContext'
+
+const PROFILE_DEFAULTS: Profile = {
+  gender: null,
+  height_cm: null,
+}
 
 const DEFAULTS: Goals = {
   calories: 2000,
@@ -19,6 +24,7 @@ const DEFAULTS: Goals = {
 export default function SettingsPage() {
   const { t } = useLang()
   const [goals, setGoals] = useState<Goals>(DEFAULTS)
+  const [profile, setProfile] = useState<Profile>(PROFILE_DEFAULTS)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -35,30 +41,42 @@ export default function SettingsPage() {
   ]
 
   useEffect(() => {
-    fetch('/api/goals')
-      .then((r) => r.json())
-      .then((data) => {
-        setGoals({
-          calories: data.calories,
-          protein_g: data.protein_g ?? 120,
-          vegetables_g: data.vegetables_g,
-          avocado_g: data.avocado_g,
-          calcium_mg: data.calcium_mg,
-          omega3_g: data.omega3_g,
-          eggs: data.eggs,
-          seafood_portions: data.seafood_portions,
-          steps_goal: data.steps_goal ?? 10000,
-        })
-        setLoading(false)
+    Promise.all([
+      fetch('/api/goals').then((r) => r.json()),
+      fetch('/api/profile').then((r) => r.json()),
+    ]).then(([data, profileData]) => {
+      setGoals({
+        calories: data.calories,
+        protein_g: data.protein_g ?? 120,
+        vegetables_g: data.vegetables_g,
+        avocado_g: data.avocado_g,
+        calcium_mg: data.calcium_mg,
+        omega3_g: data.omega3_g,
+        eggs: data.eggs,
+        seafood_portions: data.seafood_portions,
+        steps_goal: data.steps_goal ?? 10000,
       })
+      setProfile({
+        gender: profileData.gender ?? null,
+        height_cm: profileData.height_cm ?? null,
+      })
+      setLoading(false)
+    })
   }, [])
 
   const handleSave = async () => {
-    await fetch('/api/goals', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(goals),
-    })
+    await Promise.all([
+      fetch('/api/goals', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(goals),
+      }),
+      fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      }),
+    ])
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -73,6 +91,53 @@ export default function SettingsPage() {
 
   return (
     <div>
+      <h1 className="text-xl font-semibold mb-3" style={{ color: 'var(--text)' }}>
+        {t.settings.profileTitle}
+      </h1>
+
+      <div className="flex flex-col gap-3 mb-6">
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-xl"
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{t.settings.gender}</div>
+          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+            {(['male', 'female'] as Gender[]).map((g) => (
+              <button
+                key={g}
+                onClick={() => setProfile((p) => ({ ...p, gender: g }))}
+                className="px-3 py-1.5 text-sm"
+                style={{
+                  backgroundColor: profile.gender === g ? 'var(--accent)' : 'var(--surface2)',
+                  color: profile.gender === g ? '#fff' : 'var(--text)',
+                }}
+              >
+                {g === 'male' ? t.settings.male : t.settings.female}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-xl"
+          style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{t.settings.heightCm}</div>
+          <input
+            type="number"
+            step={1}
+            value={profile.height_cm ?? ''}
+            onChange={(e) => setProfile((p) => ({ ...p, height_cm: e.target.value === '' ? null : Number(e.target.value) }))}
+            className="w-20 text-center text-sm rounded-lg px-2 py-1 outline-none"
+            style={{
+              backgroundColor: 'var(--surface2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+            }}
+          />
+        </div>
+      </div>
+
       <h1 className="text-xl font-semibold mb-6" style={{ color: 'var(--text)' }}>
         {t.settings.title}
       </h1>

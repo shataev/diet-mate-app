@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useLang } from '@/contexts/LanguageContext'
-import { DailyNutrition, Goals } from '@/types'
+import { DailyNutrition, Goals, Profile, BodyMeasurement } from '@/types'
 
 interface DayResult {
   date: string
@@ -163,6 +163,44 @@ function addWeeks(weekStart: string, n: number): string {
   return localDate(d)
 }
 
+function shiftDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + days)
+  return localDate(d)
+}
+
+function MetricCard({
+  label,
+  value,
+  unit,
+  previousValue,
+  format,
+}: {
+  label: string
+  value: number | null
+  unit: string
+  previousValue: number | null
+  format: (v: number) => string
+}) {
+  const delta = value !== null && previousValue !== null ? value - previousValue : null
+  const color = delta === null || delta === 0 ? 'var(--text-muted)' : delta < 0 ? 'var(--success)' : 'var(--danger)'
+  const arrow = delta === null || delta === 0 ? '' : delta < 0 ? '↓ ' : '↑ '
+
+  return (
+    <div className="px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <div className="text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>{label}</div>
+      <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+        {value !== null ? `${format(value)} ${unit}` : '—'}
+      </div>
+      {delta !== null && (
+        <div className="text-xs mt-1" style={{ color }}>
+          {arrow}{delta > 0 ? '+' : ''}{format(delta)} {unit}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function WeeklyPage() {
   const { t, lang } = useLang()
   const [data, setData] = useState<WeeklyData | null>(null)
@@ -171,6 +209,53 @@ export default function WeeklyPage() {
   const [weekStart, setWeekStart] = useState(() => getMondayOf(today))
   const currentWeekStart = getMondayOf(today)
   const isCurrentWeek = weekStart === currentWeekStart
+
+  const [profile, setProfile] = useState<Profile>({ gender: null, height_cm: null })
+  const [measurements, setMeasurements] = useState<BodyMeasurement[]>([])
+  const [editingMeasurements, setEditingMeasurements] = useState(false)
+  const [neckInput, setNeckInput] = useState('')
+  const [waistInput, setWaistInput] = useState('')
+  const [hipInput, setHipInput] = useState('')
+  const [savingMeasurements, setSavingMeasurements] = useState(false)
+  const measurementsCardRef = useRef<HTMLDivElement>(null)
+
+  const loadMeasurements = useCallback(async () => {
+    const d = await fetch('/api/body-measurements').then((r) => r.json())
+    setProfile(d.profile)
+    setMeasurements(d.measurements)
+  }, [])
+
+  useEffect(() => {
+    loadMeasurements()
+  }, [loadMeasurements])
+
+  const saveMeasurements = useCallback(async () => {
+    setSavingMeasurements(true)
+    await fetch('/api/body-measurements', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: today,
+        neck_cm: neckInput === '' ? null : parseFloat(neckInput),
+        waist_cm: waistInput === '' ? null : parseFloat(waistInput),
+        hip_cm: hipInput === '' ? null : parseFloat(hipInput),
+      }),
+    })
+    await loadMeasurements()
+    setEditingMeasurements(false)
+    setSavingMeasurements(false)
+  }, [today, neckInput, waistInput, hipInput, loadMeasurements])
+
+  useEffect(() => {
+    if (!editingMeasurements) return
+    const handler = (e: MouseEvent) => {
+      if (measurementsCardRef.current && !measurementsCardRef.current.contains(e.target as Node)) {
+        setEditingMeasurements(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [editingMeasurements])
 
   const DAILY_PARAMS: { key: string; label: string; unit: string; getValue: (n: DailyNutrition) => string | number }[] = [
     { key: 'calories', label: t.params.calories, unit: t.units.kcal, getValue: (n) => n.calories },
@@ -206,6 +291,13 @@ export default function WeeklyPage() {
   const weekEndDate = new Date(weekEnd + 'T12:00:00')
   weekEndDate.setDate(weekEndDate.getDate() - 1)
   const weekLabel = `${new Date(weekStart + 'T12:00:00').toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })} – ${weekEndDate.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' })}`
+  const weekEndStr = localDate(weekEndDate)
+
+  const measurementsInWeek = measurements.filter((m) => m.date >= weekStart && m.date <= weekEndStr)
+  const currentMeasurement = measurementsInWeek.length > 0 ? measurementsInWeek[measurementsInWeek.length - 1] : null
+  const currentIndex = currentMeasurement ? measurements.findIndex((m) => m.date === currentMeasurement.date) : -1
+  const previousMeasurement = currentIndex > 0 ? measurements[currentIndex - 1] : null
+  const todaysMeasurement = measurements.find((m) => m.date === today) ?? null
 
   return (
     <div className="flex flex-col gap-4">
@@ -251,6 +343,93 @@ export default function WeeklyPage() {
             {data.avgSteps > 0 ? data.avgSteps.toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US') : '—'}
           </div>
         </div>
+      </div>
+
+      {/* Body composition */}
+      <div ref={measurementsCardRef} className="rounded-xl p-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{t.weekly.bodyComposition}</div>
+          {isCurrentWeek && !editingMeasurements && (
+            <button
+              onClick={() => {
+                setNeckInput(todaysMeasurement?.neck_cm != null ? String(todaysMeasurement.neck_cm) : '')
+                setWaistInput(todaysMeasurement?.waist_cm != null ? String(todaysMeasurement.waist_cm) : '')
+                setHipInput(todaysMeasurement?.hip_cm != null ? String(todaysMeasurement.hip_cm) : '')
+                setEditingMeasurements(true)
+              }}
+              className="text-xs px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            >
+              ✎ {t.weekly.editMeasurements}
+            </button>
+          )}
+        </div>
+
+        {editingMeasurements ? (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.params.neck} ({t.units.cm})</span>
+                <input
+                  type="number" step="0.1" min="0" value={neckInput}
+                  onChange={(e) => setNeckInput(e.target.value)}
+                  autoFocus
+                  className="text-lg font-semibold bg-transparent border-b-2 outline-none"
+                  style={{ color: 'var(--text)', borderColor: 'var(--accent)' }}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.params.waist} ({t.units.cm})</span>
+                <input
+                  type="number" step="0.1" min="0" value={waistInput}
+                  onChange={(e) => setWaistInput(e.target.value)}
+                  className="text-lg font-semibold bg-transparent border-b-2 outline-none"
+                  style={{ color: 'var(--text)', borderColor: 'var(--accent)' }}
+                />
+              </label>
+              {profile.gender === 'female' && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.params.hip} ({t.units.cm})</span>
+                  <input
+                    type="number" step="0.1" min="0" value={hipInput}
+                    onChange={(e) => setHipInput(e.target.value)}
+                    className="text-lg font-semibold bg-transparent border-b-2 outline-none"
+                    style={{ color: 'var(--text)', borderColor: 'var(--accent)' }}
+                  />
+                </label>
+              )}
+            </div>
+            <button
+              onClick={saveMeasurements}
+              disabled={savingMeasurements}
+              className="mt-1 py-2 rounded-lg text-sm font-semibold"
+              style={{ backgroundColor: 'var(--accent)', color: '#fff' }}
+            >
+              ✓ {t.settings.save}
+            </button>
+          </div>
+        ) : !profile.gender || !profile.height_cm ? (
+          <>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.weekly.needProfile}</div>
+            {currentMeasurement && (
+              <div className="grid grid-cols-2 gap-3">
+                <MetricCard label={t.params.waist} value={currentMeasurement.waist_cm} unit={t.units.cm} previousValue={previousMeasurement?.waist_cm ?? null} format={(v) => v.toFixed(1)} />
+                <MetricCard label={t.params.neck} value={currentMeasurement.neck_cm} unit={t.units.cm} previousValue={previousMeasurement?.neck_cm ?? null} format={(v) => v.toFixed(1)} />
+              </div>
+            )}
+          </>
+        ) : currentMeasurement ? (
+          <div className="grid grid-cols-2 gap-3">
+            <MetricCard label={t.params.bodyFat} value={currentMeasurement.body_fat_pct} unit={t.units.percent} previousValue={previousMeasurement?.body_fat_pct ?? null} format={(v) => v.toFixed(1)} />
+            <MetricCard label={t.params.waist} value={currentMeasurement.waist_cm} unit={t.units.cm} previousValue={previousMeasurement?.waist_cm ?? null} format={(v) => v.toFixed(1)} />
+            <MetricCard label={t.params.neck} value={currentMeasurement.neck_cm} unit={t.units.cm} previousValue={previousMeasurement?.neck_cm ?? null} format={(v) => v.toFixed(1)} />
+            {profile.gender === 'female' && (
+              <MetricCard label={t.params.hip} value={currentMeasurement.hip_cm} unit={t.units.cm} previousValue={previousMeasurement?.hip_cm ?? null} format={(v) => v.toFixed(1)} />
+            )}
+          </div>
+        ) : (
+          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>{t.weekly.noMeasurements}</div>
+        )}
       </div>
 
       {/* Trend charts */}
