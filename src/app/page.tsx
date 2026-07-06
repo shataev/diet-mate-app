@@ -10,12 +10,14 @@ interface ProgressBarProps {
   goal: number
   unit: string
   format?: (v: number) => string
+  ceiling?: number
 }
 
-function ProgressBar({ label, current, goal, unit, format }: ProgressBarProps) {
+function ProgressBar({ label, current, goal, unit, format, ceiling }: ProgressBarProps) {
   const pct = goal > 0 ? Math.min((current / goal) * 100, 100) : 0
-  const done = current >= goal
+  const done = ceiling !== undefined ? current <= goal + ceiling : current >= goal
   const fmt = format ?? ((v: number) => String(Math.round(v)))
+  const overColor = ceiling !== undefined ? 'var(--danger)' : 'var(--text-muted)'
 
   return (
     <div
@@ -26,7 +28,7 @@ function ProgressBar({ label, current, goal, unit, format }: ProgressBarProps) {
         <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
           {label}
         </span>
-        <span className="text-sm" style={{ color: done ? 'var(--success)' : 'var(--text-muted)' }}>
+        <span className="text-sm" style={{ color: done ? 'var(--success)' : overColor }}>
           {fmt(current)} / {fmt(goal)} {unit}{done && ' ✓'}
         </span>
       </div>
@@ -35,7 +37,7 @@ function ProgressBar({ label, current, goal, unit, format }: ProgressBarProps) {
           className="h-full rounded-full transition-all duration-500"
           style={{
             width: `${pct}%`,
-            backgroundColor: done ? 'var(--success)' : pct > 60 ? 'var(--warning)' : 'var(--accent)',
+            backgroundColor: done ? 'var(--success)' : ceiling !== undefined ? 'var(--danger)' : pct > 60 ? 'var(--warning)' : 'var(--accent)',
           }}
         />
       </div>
@@ -378,7 +380,7 @@ export default function Dashboard() {
         <div className="text-xs font-semibold uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>
           {t.weekly.daily}
         </div>
-        <ProgressBar label={t.params.calories} current={n.calories} goal={goals.calories} unit={t.units.kcal} />
+        <ProgressBar label={t.params.calories} current={n.calories} goal={goals.calories} unit={t.units.kcal} ceiling={50} />
         <ProgressBar label={t.params.protein} current={n.protein_g} goal={goals.protein_g} unit={t.units.g} />
         <ProgressBar label={t.params.vegetables} current={n.vegetables_g} goal={goals.vegetables_g} unit={t.units.g} />
         <ProgressBar label={t.params.avocado} current={n.avocado_g} goal={goals.avocado_g} unit={t.units.g} />

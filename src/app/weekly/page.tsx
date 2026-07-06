@@ -25,6 +25,7 @@ function TrendChart({
   color,
   type = 'bar',
   lang,
+  evaluateHit,
 }: {
   days: DayResult[]
   getValue: (d: DayResult) => number | null
@@ -32,6 +33,7 @@ function TrendChart({
   color: string
   type?: 'bar' | 'line'
   lang: string
+  evaluateHit?: (v: number, goal: number) => boolean
 }) {
   const W = 300, H = 80, PAD = 4, BOTTOM = 18
   const vals = days.map(getValue)
@@ -70,7 +72,7 @@ function TrendChart({
         const v = getValue(d)
         if (v === null) return null
         const barH = Math.max(2, ((v - min) / range) * (H - BOTTOM - PAD))
-        const hit = goal !== undefined ? v >= goal : true
+        const hit = goal !== undefined ? (evaluateHit ? evaluateHit(v, goal) : v >= goal) : true
         const cx = barX(i) + barW / 2
         const labelY = H - BOTTOM - barH - 3
         return (
@@ -265,8 +267,9 @@ export default function WeeklyPage() {
           unit: t.units.kcal,
           getValue: (d: DayResult) => d.nutrition.calories || null,
           goal: goals.calories,
-          color: '#f59e0b',
+          color: 'var(--success)',
           type: 'bar' as const,
+          evaluateHit: (v: number, goal: number) => v <= goal + 50,
         },
         {
           label: t.weekly.avgSteps,
@@ -276,13 +279,13 @@ export default function WeeklyPage() {
           color: 'var(--success)',
           type: 'bar' as const,
         },
-      ].map(({ label, unit, getValue, goal, color, type }) => (
+      ].map(({ label, unit, getValue, goal, color, type, evaluateHit }) => (
         <div key={label} className="p-4 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
           <div className="text-sm font-medium mb-2 flex items-center justify-between" style={{ color: 'var(--text)' }}>
             <span>{label}</span>
             {unit && <span>{unit}</span>}
           </div>
-          <TrendChart days={days} getValue={getValue} goal={goal} color={color} type={type} lang={lang} />
+          <TrendChart days={days} getValue={getValue} goal={goal} color={color} type={type} lang={lang} evaluateHit={evaluateHit} />
         </div>
       ))}
 
