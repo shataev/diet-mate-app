@@ -16,6 +16,21 @@ export interface DailyLog {
   steps: number | null
 }
 
+export type Gender = 'male' | 'female'
+
+export interface Profile {
+  gender: Gender | null
+  height_cm: number | null
+}
+
+export interface BodyMeasurement {
+  date: string
+  neck_cm: number | null
+  waist_cm: number | null
+  hip_cm: number | null
+  body_fat_pct: number | null
+}
+
 export type FoodCategory =
   | 'vegetables'
   | 'avocado'

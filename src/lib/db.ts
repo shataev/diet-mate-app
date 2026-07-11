@@ -54,6 +54,25 @@ function initSchema(db: Database.Database) {
       expires_at INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS profile (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      gender TEXT,
+      height_cm REAL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    INSERT OR IGNORE INTO profile (id) VALUES (1);
+
+    CREATE TABLE IF NOT EXISTS body_measurements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL UNIQUE,
+      neck_cm REAL,
+      waist_cm REAL,
+      hip_cm REAL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `)
 
   try {
