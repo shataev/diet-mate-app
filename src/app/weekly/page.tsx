@@ -169,7 +169,7 @@ function shiftDate(dateStr: string, days: number): string {
   return localDate(d)
 }
 
-function MetricCard({
+function InlineMetric({
   label,
   value,
   unit,
@@ -184,18 +184,18 @@ function MetricCard({
 }) {
   const delta = value !== null && previousValue !== null ? value - previousValue : null
   const color = delta === null || delta === 0 ? 'var(--text-muted)' : delta < 0 ? 'var(--success)' : 'var(--danger)'
-  const arrow = delta === null || delta === 0 ? '' : delta < 0 ? '↓ ' : '↑ '
+  const arrow = delta === null || delta === 0 ? '' : delta < 0 ? '↓' : '↑'
 
   return (
-    <div className="px-4 py-3 rounded-xl" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
-      <div className="text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>{label}</div>
-      <div className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
         {value !== null ? `${format(value)} ${unit}` : '—'}
-      </div>
+      </span>
       {delta !== null && (
-        <div className="text-xs mt-1" style={{ color }}>
-          {arrow}{delta > 0 ? '+' : ''}{format(delta)} {unit}
-        </div>
+        <span className="text-xs" style={{ color }}>
+          {arrow}{format(Math.abs(delta))}
+        </span>
       )}
     </div>
   )
@@ -412,19 +412,19 @@ export default function WeeklyPage() {
           <>
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.weekly.needProfile}</div>
             {currentMeasurement && (
-              <div className="grid grid-cols-2 gap-3">
-                <MetricCard label={t.params.waist} value={currentMeasurement.waist_cm} unit={t.units.cm} previousValue={previousMeasurement?.waist_cm ?? null} format={(v) => v.toFixed(1)} />
-                <MetricCard label={t.params.neck} value={currentMeasurement.neck_cm} unit={t.units.cm} previousValue={previousMeasurement?.neck_cm ?? null} format={(v) => v.toFixed(1)} />
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <InlineMetric label={t.params.waist} value={currentMeasurement.waist_cm} unit={t.units.cm} previousValue={previousMeasurement?.waist_cm ?? null} format={(v) => v.toFixed(1)} />
+                <InlineMetric label={t.params.neck} value={currentMeasurement.neck_cm} unit={t.units.cm} previousValue={previousMeasurement?.neck_cm ?? null} format={(v) => v.toFixed(1)} />
               </div>
             )}
           </>
         ) : currentMeasurement ? (
-          <div className="grid grid-cols-2 gap-3">
-            <MetricCard label={t.params.bodyFat} value={currentMeasurement.body_fat_pct} unit={t.units.percent} previousValue={previousMeasurement?.body_fat_pct ?? null} format={(v) => v.toFixed(1)} />
-            <MetricCard label={t.params.waist} value={currentMeasurement.waist_cm} unit={t.units.cm} previousValue={previousMeasurement?.waist_cm ?? null} format={(v) => v.toFixed(1)} />
-            <MetricCard label={t.params.neck} value={currentMeasurement.neck_cm} unit={t.units.cm} previousValue={previousMeasurement?.neck_cm ?? null} format={(v) => v.toFixed(1)} />
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <InlineMetric label={t.params.bodyFat} value={currentMeasurement.body_fat_pct} unit={t.units.percent} previousValue={previousMeasurement?.body_fat_pct ?? null} format={(v) => v.toFixed(1)} />
+            <InlineMetric label={t.params.waist} value={currentMeasurement.waist_cm} unit={t.units.cm} previousValue={previousMeasurement?.waist_cm ?? null} format={(v) => v.toFixed(1)} />
+            <InlineMetric label={t.params.neck} value={currentMeasurement.neck_cm} unit={t.units.cm} previousValue={previousMeasurement?.neck_cm ?? null} format={(v) => v.toFixed(1)} />
             {profile.gender === 'female' && (
-              <MetricCard label={t.params.hip} value={currentMeasurement.hip_cm} unit={t.units.cm} previousValue={previousMeasurement?.hip_cm ?? null} format={(v) => v.toFixed(1)} />
+              <InlineMetric label={t.params.hip} value={currentMeasurement.hip_cm} unit={t.units.cm} previousValue={previousMeasurement?.hip_cm ?? null} format={(v) => v.toFixed(1)} />
             )}
           </div>
         ) : (
