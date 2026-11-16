@@ -63,7 +63,6 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
   result.protein_g = Math.round(result.protein_g)
   if (unclassified.length > 0) result.unclassified = unclassified
 
-
   return result
 }
 
