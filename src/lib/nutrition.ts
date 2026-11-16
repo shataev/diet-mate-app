@@ -6,6 +6,7 @@ import { DailyNutrition } from '@/types'
 
 const SEAFOOD_PORTION_G = 110
 const EGG_WEIGHT_G = 50
+const CALCIUM_DAILY_VALUE_MG = 1300
 
 export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
   const entries = await getFoodDiary(date)
@@ -25,9 +26,10 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
 
     result.calories += Number(entry.calories) || 0
     result.protein_g += Number(entry.protein) || 0
-    // Fatsecret returns entry nutrients for the whole eaten portion, calcium in mg —
-    // same as calories and protein above, so it is summed as is.
-    result.calcium_mg += Number(entry.calcium) || 0
+    // Fatsecret's entry `calcium` is % of the daily value for the whole eaten
+    // portion (checked against real entries: 40 g feta → 15, 170 g egg → 7),
+    // not mg. Convert with the FDA daily value of 1300 mg.
+    result.calcium_mg += (Number(entry.calcium) || 0) * CALCIUM_DAILY_VALUE_MG / 100
 
     if (category === 'vegetables') {
       result.vegetables_g += grams
