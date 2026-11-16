@@ -6,6 +6,10 @@ import { getDailyNutrition } from '@/lib/nutrition'
 import { getWeightForDate } from '@/lib/fatsecret'
 import { Goals, DailyNutrition } from '@/types'
 
+const EMPTY_NUTRITION: DailyNutrition = {
+  calories: 0, protein_g: 0, vegetables_g: 0, avocado_g: 0, calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0,
+}
+
 function getMondayOf(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00')
   const day = d.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
@@ -16,7 +20,12 @@ function getMondayOf(dateStr: string): string {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const today = new Date().toISOString().slice(0, 10)
+  // The client sends its own local date: the server runs in UTC, and using the
+  // server's date would drop "today" from the week for the hours the two differ.
+  const todayParam = searchParams.get('today')
+  const today = todayParam && /^\d{4}-\d{2}-\d{2}$/.test(todayParam)
+    ? todayParam
+    : new Date().toISOString().slice(0, 10)
   const weekStart = searchParams.get('weekStart') ?? getMondayOf(today)
 
   const days: string[] = []
@@ -40,8 +49,14 @@ export async function GET(request: NextRequest) {
       let weight_kg = log?.weight_kg ?? null
       let steps = log?.steps ?? null
 
+      // One failing day must not take the whole week down: report it and move on.
+      let error: string | null = null
       const [nutrition, fsWeight] = await Promise.all([
-        getDailyNutrition(date),
+        getDailyNutrition(date).catch((e): DailyNutrition => {
+          console.error(`[weekly] nutrition for ${dateStr} failed:`, e)
+          error = String(e instanceof Error ? e.message : e)
+          return { ...EMPTY_NUTRITION }
+        }),
         weight_kg === null ? getWeightForDate(date).catch(() => null) : Promise.resolve(null),
       ])
 
@@ -64,6 +79,7 @@ export async function GET(request: NextRequest) {
         weight_kg,
         steps,
         hits: computeHits(nutrition, goals),
+        error,
       }
     })
   )

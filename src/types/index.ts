@@ -67,4 +67,6 @@ export interface DailyNutrition {
   omega3_g: number
   eggs: number
   seafood_portions: number
+  /** Foods not yet classified (OpenAI unavailable); category totals are incomplete. */
+  unclassified?: string[]
 }

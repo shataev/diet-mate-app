@@ -15,7 +15,7 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
   }
 
   const foodNames = [...new Set(entries.map((e) => e.food_entry_name))]
-  const categories = await categorizeBatch(foodNames)
+  const { categories, unclassified } = await categorizeBatch(foodNames)
 
   const result: DailyNutrition = { calories: 0, protein_g: 0, vegetables_g: 0, avocado_g: 0, calcium_mg: 0, omega3_g: 0, eggs: 0, seafood_portions: 0 }
 
@@ -25,7 +25,9 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
 
     result.calories += Number(entry.calories) || 0
     result.protein_g += Number(entry.protein) || 0
-    result.calcium_mg += (Number(entry.calcium) || 0) * (grams / 100)
+    // Fatsecret returns entry nutrients for the whole eaten portion, calcium in mg —
+    // same as calories and protein above, so it is summed as is.
+    result.calcium_mg += Number(entry.calcium) || 0
 
     if (category === 'vegetables') {
       result.vegetables_g += grams
@@ -59,6 +61,7 @@ export async function getDailyNutrition(date: Date): Promise<DailyNutrition> {
   result.omega3_g = Math.round(result.omega3_g * 100) / 100
   result.calcium_mg = Math.round(result.calcium_mg)
   result.protein_g = Math.round(result.protein_g)
+  if (unclassified.length > 0) result.unclassified = unclassified
 
   return result
 }

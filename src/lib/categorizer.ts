@@ -54,9 +54,13 @@ Categories:
   return category
 }
 
-export async function categorizeBatch(
-  foodNames: string[]
-): Promise<Map<string, FoodCategory>> {
+export interface CategorizeResult {
+  categories: Map<string, FoodCategory>
+  /** Foods that could not be classified right now (counted as 'other', not cached). */
+  unclassified: string[]
+}
+
+export async function categorizeBatch(foodNames: string[]): Promise<CategorizeResult> {
   const result = new Map<string, FoodCategory>()
   const db = getDb()
 
@@ -72,30 +76,40 @@ export async function categorizeBatch(
     }
   }
 
-  if (uncached.length === 0) return result
+  if (uncached.length === 0) return { categories: result, unclassified: [] }
 
-  const response = await getClient().chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `Classify each food item into exactly one category. Reply with JSON object where keys are food names and values are categories.
+  let response: OpenAI.Chat.Completions.ChatCompletion
+  try {
+    response = await getClient().chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `Classify each food item into exactly one category. Reply with JSON object where keys are food names and values are categories.
 Categories: vegetables, avocado, eggs, seafood, other
 - vegetables: any vegetables, fruits, greens, herbs (tomato, apple, banana, spinach, etc.)
 - avocado: avocado and guacamole only
 - eggs: ONLY whole eggs or simple egg dishes where egg IS the dish (boiled egg, fried egg, scrambled eggs, omelette). NOT pastries, cakes, or dishes that merely contain egg as ingredient (egg tart, egg roll, quiche, etc.)
 - seafood: shellfish and mollusks ONLY — shrimp, mussels, clams, oysters, squid, octopus, crab, lobster, scallops, seafood mix. NOT fish of any kind.
 - other: everything else including ALL fish (salmon, tuna, cod, mackerel, herring, sardines, trout, etc.), meat, dairy, grains, nuts, oils, sauces, sweets, pastries, processed foods, etc.`,
-      },
-      {
-        role: 'user',
-        content: JSON.stringify(uncached),
-      },
-    ],
-    max_tokens: 500,
-    temperature: 0,
-    response_format: { type: 'json_object' },
-  })
+        },
+        {
+          role: 'user',
+          content: JSON.stringify(uncached),
+        },
+      ],
+      max_tokens: 500,
+      temperature: 0,
+      response_format: { type: 'json_object' },
+    })
+  } catch (error) {
+    // OpenAI unavailable (no credits, rate limit, outage): count the new foods
+    // as 'other' for now and leave them uncached, so they get classified on a
+    // later request instead of being stuck as 'other' forever.
+    console.error('[categorizer] OpenAI classification failed:', error)
+    for (const name of uncached) result.set(name, 'other')
+    return { categories: result, unclassified: uncached }
+  }
 
   try {
     const parsed = JSON.parse(response.choices[0].message.content ?? '{}')
@@ -116,7 +130,8 @@ Categories: vegetables, avocado, eggs, seafood, other
     for (const name of uncached) {
       result.set(name, 'other')
     }
+    return { categories: result, unclassified: uncached }
   }
 
-  return result
+  return { categories: result, unclassified: [] }
 }
