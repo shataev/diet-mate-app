@@ -112,7 +112,7 @@ export default function Dashboard() {
     try {
       const [dailyData, weeklyData] = await Promise.all([
         fetch(`/api/nutrition?date=${selectedDate}`).then((r) => r.ok ? r.json() : null),
-        fetch(`/api/weekly?weekStart=${getMondayOf(selectedDate)}`).then((r) => r.ok ? r.json() : null),
+        fetch(`/api/weekly?weekStart=${getMondayOf(selectedDate)}&today=${today}`).then((r) => r.ok ? r.json() : null),
       ])
       if (dailyData) setNutrition(dailyData)
       const days: { nutrition: DailyNutrition }[] = weeklyData?.days ?? []
@@ -127,7 +127,7 @@ export default function Dashboard() {
       setRefreshing(false)
       setLoading(false)
     }
-  }, [selectedDate])
+  }, [selectedDate, today])
 
   const saveWeight = useCallback(async () => {
     const val = parseFloat(weightInput)
@@ -380,6 +380,11 @@ export default function Dashboard() {
         <div className="text-xs font-semibold uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>
           {t.weekly.daily}
         </div>
+        {(n.unclassified?.length ?? 0) > 0 && (
+          <div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--danger)', color: 'var(--text)' }}>
+            ⚠ {t.dashboard.unclassified(n.unclassified!.length)}
+          </div>
+        )}
         <ProgressBar label={t.params.calories} current={n.calories} goal={goals.calories} unit={t.units.kcal} ceiling={50} />
         <ProgressBar label={t.params.protein} current={n.protein_g} goal={goals.protein_g} unit={t.units.g} />
         <ProgressBar label={t.params.vegetables} current={n.vegetables_g} goal={goals.vegetables_g} unit={t.units.g} />

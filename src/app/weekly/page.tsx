@@ -10,6 +10,7 @@ interface DayResult {
   steps: number | null
   nutrition: DailyNutrition
   hits: Record<string, boolean>
+  error?: string | null
 }
 
 interface WeeklyData {
@@ -205,6 +206,8 @@ export default function WeeklyPage() {
   const { t, lang } = useLang()
   const [data, setData] = useState<WeeklyData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const today = localDate()
   const [weekStart, setWeekStart] = useState(() => getMondayOf(today))
   const currentWeekStart = getMondayOf(today)
@@ -266,11 +269,37 @@ export default function WeeklyPage() {
   ]
 
   useEffect(() => {
+    let cancelled = false
     setLoading(true)
-    fetch(`/api/weekly?weekStart=${weekStart}`)
-      .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false) })
-  }, [weekStart])
+    setLoadError(false)
+    fetch(`/api/weekly?weekStart=${weekStart}&today=${today}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then((d) => { if (!cancelled) setData(d) })
+      .catch((e) => {
+        console.error('Weekly load failed:', e)
+        if (!cancelled) { setData(null); setLoadError(true) }
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [weekStart, today, reloadKey])
+
+  if (!loading && loadError) {
+    return (
+      <div className="text-center py-12 flex flex-col items-center gap-3">
+        <div style={{ color: 'var(--danger)' }}>{t.weekly.loadError}</div>
+        <button
+          onClick={() => setReloadKey((k) => k + 1)}
+          className="text-sm px-4 py-2 rounded-lg"
+          style={{ backgroundColor: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          {t.weekly.retry}
+        </button>
+      </div>
+    )
+  }
 
   if (loading || !data) {
     return (
@@ -281,6 +310,9 @@ export default function WeeklyPage() {
   }
 
   const { days, goals } = data
+  const formatDays = (list: DayResult[]) => list.map((d) => shortDay(d.date, lang)).join(', ')
+  const failedDays = days.filter((d) => d.error)
+  const unclassifiedDays = days.filter((d) => (d.nutrition.unclassified?.length ?? 0) > 0)
   const daysWithWeight = days.filter((d) => d.weight_kg !== null)
 
   const weeklyOmega3 = days.reduce((s, d) => s + d.nutrition.omega3_g, 0)
@@ -320,6 +352,13 @@ export default function WeeklyPage() {
           >›</button>
         </div>
       </div>
+
+      {(failedDays.length > 0 || unclassifiedDays.length > 0) && (
+        <div className="rounded-xl p-3 text-xs flex flex-col gap-1" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--danger)', color: 'var(--text)' }}>
+          {failedDays.length > 0 && <div>⚠ {t.weekly.daysFailed(formatDays(failedDays))}</div>}
+          {unclassifiedDays.length > 0 && <div>⚠ {t.weekly.unclassified(formatDays(unclassifiedDays))}</div>}
+        </div>
+      )}
 
       {/* Weight + Steps */}
       <div className="grid grid-cols-2 gap-3">
